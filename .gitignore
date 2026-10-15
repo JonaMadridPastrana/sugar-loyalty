@@ -37,6 +37,7 @@ build/
 /secrets/
 /backups/
 /application-local.properties
+/GUIA_DE_ESTUDIO_ENTREVISTA.md
 /src/main/resources/google-wallet-credentials.json
 
 # Local-only modernization notes and generated analysis
