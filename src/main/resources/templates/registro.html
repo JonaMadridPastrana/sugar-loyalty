@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Loyalty - Registro</title>
+    <!-- Tailwind CSS desde CDN para dar diseño rápido y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-items pt-6 pb-12"
+      style="background-image: url('/images/FondoRegistro.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+
+<div class="-mb-[90px] text-center z-10 relative">
+    <img src="/images/LogoBlanco.PNG" alt="Sugar Pop Logo" class="w-66 h-66 mx-auto object-contain drop-shadow-md" onerror="this.style.display='none'">
+
+</div>
+
+<div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-pink-100 relative z-20">
+    <!-- Encabezado con la marca -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-extrabold text-pink-700">SUGAR POP</h1>
+        <p class="text-gray-500 text-sm mt-1">¡Suma puntos y canjea tus postres favoritos!</p>
+    </div>
+
+    <!-- Formulario de Registro -->
+    <form id="formRegistro" class="space-y-4">
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre</label>
+            <input type="text" id="nombre" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="Tu nombre">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Apellido</label>
+            <input type="text" id="apellido" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="Tu apellido">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Teléfono (WhatsApp)</label>
+            <input type="tel" id="telefono" required pattern="[0-9]{10}" maxlength="10" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="10 dígitos">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Correo Electrónico</label>
+            <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="tu@correo.com">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Fecha de Nacimiento</label>
+            <input type="date" id="fechaNacimiento" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Sistema Operativo de tu Celular</label>
+            <select id="sistemaoperativo" name="sistemaOperativo" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none bg-white">
+                <option value="ANDROID">Android (Google Wallet)</option>
+                <option value="IOS">iPhone (Código QR)</option>
+            </select>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-200 mt-2">
+            ¡Registrarme y Obtener Tarjeta!
+        </button>
+    </form>
+
+    <!-- Cuadro de Notificación / Mensaje -->
+    <div id="mensajeResultado" class="hidden mt-4 p-3 rounded-lg text-center text-sm font-medium"></div>
+
+    <!-- Sección de Google Wallet para usuarios Android -->
+    <div id="seccionWallet" class="mt-6 p-6 bg-pink-50 rounded-xl shadow-inner border border-pink-200 text-center hidden">
+        <h3 class="text-lg font-bold text-gray-800 mb-1">¡Tu Pase Google Wallet está listo!</h3>
+        <p class="text-sm text-gray-600 mb-4">Guarda tu tarjeta de lealtad Sugar Pop directamente en tu billetera digital de Google.</p>
+
+        <a id="btnGoogleWallet" href="#" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white font-semibold px-5 py-3 rounded-xl shadow-lg transition duration-200 w-full">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21.35 11.1h-9.17v2.98h5.27c-.23 1.21-.92 2.23-1.95 2.92v2.43h3.16c1.85-1.7 2.92-4.21 2.92-7.23 0-.71-.06-1.4-.23-2.1z" fill="#4285F4"/>
+                <path d="M12.18 20.48c2.56 0 4.71-.85 6.28-2.31l-3.16-2.43c-.88.59-2 .94-3.12.94-2.4 0-4.44-1.62-5.17-3.8H3.72v2.51c1.57 3.12 4.79 5.09 8.46 5.09z" fill="#34A853"/>
+                <path d="M7.01 12.88c-.19-.57-.3-1.18-.3-1.8s.11-1.23.3-1.8V6.77H3.72C3.07 8.06 2.7 9.5 2.7 11.08s.37 3.02 1.02 4.31l3.29-2.51z" fill="#FBBC05"/>
+                <path d="M12.18 5.68c1.39 0 2.64.48 3.63 1.42l2.72-2.72C16.88 2.87 14.73 2 12.18 2 8.51 2 5.29 3.97 3.72 7.09l3.29 2.51c.73-2.18 2.77-3.8 5.17-3.8z" fill="#EA4335"/>
+            </svg>
+            <span>Guardar en Google Wallet</span>
+        </a>
+    </div>
+
+    <!-- Sección de Código QR para usuarios iOS (o fallback) -->
+    <div id="seccionQr" class="mt-6 p-6 bg-white rounded-xl shadow-md border border-pink-100 text-center hidden">
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Tu Tarjeta Digital (Código QR)</h3>
+        <p class="text-sm text-gray-600 mb-4">Muestra este código QR en caja para acumular puntos rápidamente.</p>
+
+        <!-- Contenedor de la Imagen QR -->
+        <div class="flex justify-center mb-4">
+            <img id="imagenQrCliente" src="" alt="Código QR de Lealtad" class="w-48 h-48 border-4 border-pink-200 rounded-lg shadow-sm">
+        </div>
+
+        <!-- Botón de Descarga -->
+        <a id="btnDescargarQr" href="" download="sugar-pop-qr.png"
+           class="inline-block bg-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-pink-700 transition">
+            Descargar Código QR
+        </a>
+    </div>
+</div>
+
+<!-- Script en JavaScript para conectar el formulario con el Backend -->
+<script>
+    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btnSubmit = document.getElementById('btnSubmit');
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = 'Procesando registro...';
+
+        const telefonoVal = document.getElementById('telefono').value.trim();
+        const sistemaOp = document.getElementById('sistemaoperativo').value;
+
+        const payload = {
+            nombre: document.getElementById('nombre').value.trim(),
+            apellido: document.getElementById('apellido').value.trim(),
+            telefono: telefonoVal,
+            email: document.getElementById('email').value.trim(),
+            fechaNacimiento: document.getElementById('fechaNacimiento').value,
+            sistemaOperativo: sistemaOp
+        };
+
+        const mensajeDiv = document.getElementById('mensajeResultado');
+        const seccionWallet = document.getElementById('seccionWallet');
+        const seccionQr = document.getElementById('seccionQr');
+
+        seccionWallet.classList.add('hidden');
+        seccionQr.classList.add('hidden');
+
+        try {
+            const response = await fetch('/api/clientes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const nombreCliente = (data.cliente && data.cliente.nombre) ? data.cliente.nombre : payload.nombre;
+
+                mensajeDiv.className = 'mt-4 p-3 rounded-lg text-center text-sm font-medium bg-green-100 text-green-700';
+                mensajeDiv.innerHTML = `¡Registro exitoso, <strong>${nombreCliente}</strong>! Ya puedes acumular tus puntos en caja.`;
+                mensajeDiv.classList.remove('hidden');
+
+                // Si seleccionó ANDROID y se generó walletUrl
+                if (sistemaOp === 'ANDROID' && data.walletUrl) {
+                    const btnWallet = document.getElementById('btnGoogleWallet');
+                    btnWallet.href = data.walletUrl;
+                    seccionWallet.classList.remove('hidden');
+                } else {
+                    // Si es iOS o si no hay walletUrl, mostramos el código QR
+                    const urlQr = `/api/clientes/${telefonoVal}/qr`;
+                    document.getElementById('imagenQrCliente').src = urlQr;
+                    document.getElementById('btnDescargarQr').href = urlQr;
+                    seccionQr.classList.remove('hidden');
+                }
+
+                document.getElementById('formRegistro').reset();
+            } else {
+                let errorMsg = 'Error al registrar el cliente.';
+                if (data.mensaje) {
+                    errorMsg = data.mensaje;
+                } else if (data.detalles) {
+                    errorMsg = Object.values(data.detalles).join(', ');
+                }
+                mensajeDiv.className = 'mt-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+                mensajeDiv.innerHTML = `<strong>Error:</strong> ${errorMsg}`;
+                mensajeDiv.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error('Error de red:', err);
+            mensajeDiv.className = 'mt-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeDiv.innerHTML = 'Error de conexión con el servidor.';
+            mensajeDiv.classList.remove('hidden');
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = '¡Registrarme y Obtener Tarjeta!';
+        }
+    });
+</script>
+</body>
+</html>

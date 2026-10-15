@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Loyalty - Punto de Venta</title>
+    <!-- Tailwind CSS por CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-purple-100 min-h-screen p-4 md:p-6">
+
+<div class="max-w-5xl mx-auto">
+    <!-- Encabezado del POS -->
+    <header class="flex items-center justify-between bg-white p-4 rounded-xl shadow-md mb-6 border border-pink-100">
+        <div class="flex items-center space-x-3">
+            <img src="/images/LogoBlanco.PNG" alt="Sugar Pop Logo" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
+            <div>
+                <h1 class="text-xl font-bold text-pink-600">SUGAR POP - Caja para gestionar clientes</h1>
+                <p class="text-xs text-gray-500">Módulo de Asignación y Canje de Puntos</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+            <span class="bg-pink-100 text-pink-700 text-xs font-semibold px-3 py-1 rounded-full">Caja Activa</span>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Columna Izquierda: Búsqueda y Datos del Cliente (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-pink-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span>🔍</span> Buscar Cliente
+                </h2>
+
+                <form id="formBusqueda" class="flex gap-2 mb-4">
+                    <input type="tel" id="telefonoBusqueda" placeholder="Teléfono a 10 dígitos" required maxlength="10"
+                           class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none text-gray-800">
+                    <button type="submit" id="btnBuscar" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 py-2 rounded-lg shadow transition">
+                        Buscar
+                    </button>
+                </form>
+                
+                <div class="mb-4">
+    <button type="button" id="btnEscanearQr"
+            class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg">
+        Escanear QR
+    </button>
+
+    <button type="button" id="btnDetenerEscaneo" hidden
+            class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-4 py-2 rounded-lg">
+        Detener cámara
+    </button>
+</div>
+
+<div id="lectorQr" hidden class="mb-4"></div>
+
+                <div id="mensajeBusqueda" class="hidden p-3 rounded-lg text-center text-sm font-medium mb-4"></div>
+
+                <!-- Tarjeta de Información del Cliente (Oculta por defecto) -->
+                <div id="infoCliente" class="hidden bg-pink-50 p-5 rounded-xl border border-pink-200 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase font-bold">Cliente</p>
+                            <h3 id="clienteNombre" class="text-lg font-bold text-gray-900"></h3>
+                        </div>
+                        <span id="clienteSO" class="text-xs font-semibold px-2.5 py-1 bg-white text-gray-600 rounded-md border border-pink-200 shadow-sm"></span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                        <div>
+                            <span class="block text-xs text-gray-400">Teléfono:</span>
+                            <span id="clienteTelefono" class="font-medium text-gray-800"></span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-gray-400">Correo:</span>
+                            <span id="clienteEmail" class="font-medium text-gray-800 text-xs truncate block" title=""></span>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-pink-200 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 uppercase">Puntos Disponibles</span>
+                            <p class="text-xs text-gray-400">1 punto por c/$10</p>
+                        </div>
+                        <span id="clientePuntos" class="text-3xl font-black text-pink-600">0</span>
+                    </div>
+
+                    <!-- Botones de Gestión del Cliente -->
+                    <div class="pt-3 border-t border-pink-200 flex gap-2">
+                        <button type="button" id="btnReiniciarPuntos"
+                                class="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-3 rounded-lg shadow transition">
+                            🔄 Reiniciar Puntos
+                        </button>
+                        <button type="button" id="btnEliminarCliente"
+                                class="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded-lg shadow transition">
+                            🗑️ Eliminar Cliente
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Historial de Movimientos (oculta al inicio)-->
+            <div id="seccionHistorial" class="hidden bg-white p-5 rounded-2xl shadow-md border border-pink-100">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-md font-bold text-gray-800 flex items-center gap-2">
+                        <span>📜</span> Historial de Movimientos
+                    </h3>
+                    <span id="contadorHistorial" class="text-xs font-semibold px-2 py-0.5 bg-pink-100 text-pink-700 rounded-full">0 registros</span>
+                </div>
+
+                <!-- Lista deslizable de transacciones -->
+                <div id="listaHistorial" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <!-- Aquí JavaScript insertará dinámicamente cada compra o canje -->
+                </div>
+
+                <!-- Mensaje si no tiene movimientos aún -->
+                <p id="historialVacio" class="hidden text-xs text-gray-400 text-center py-4">
+                    Este cliente aún no tiene movimientos registrados.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Columna Derecha: Acciones (Sumar Puntos / Canje) (7 cols) -->
+        <div class="lg:col-span-7">
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-pink-100">
+                <!-- Selector de Pestañas -->
+                <div class="flex border-b border-gray-200 mb-6">
+                    <button id="tabBtnAcumular" type="button" class="flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 border-pink-500 text-pink-600 transition flex items-center justify-center gap-2">
+                        <span>💰</span> Sumar Puntos (Compra)
+                    </button>
+                    <button id="tabBtnCanjear" type="button" class="flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition flex items-center justify-center gap-2">
+                        <span>🎁</span> Canjear Recompensa
+                    </button>
+                </div>
+
+                <!-- Notificación de Operación -->
+                <div id="mensajeOperacion" class="hidden mb-4 p-3 rounded-lg text-center text-sm font-medium"></div>
+
+                <!-- PESTAÑA 1: Formulario de Acumulación -->
+                <div id="panelAcumular">
+                    <h2 class="text-md font-bold text-gray-700 mb-3">Registrar Monto de Venta</h2>
+                    <p class="text-xs text-gray-500 mb-4">El sistema abonará automáticamente 1 punto por cada $10.00 MXN consumidos.</p>
+
+                    <form id="formTransaccion" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Monto de Compra ($ MXN)</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 font-bold">$</span>
+                                <input type="number" step="0.01" min="1.00" id="montoCompra" placeholder="ej. 150.00" disabled required
+                                       class="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none disabled:bg-gray-100">
+                            </div>
+                        </div>
+
+                        <div id="previewPuntos" class="hidden text-xs text-pink-600 font-semibold bg-pink-50 p-2 rounded-lg border border-pink-100">
+                            Se abonarán aproximadamente: <span id="ptsCalculados" class="font-bold text-sm">0</span> puntos
+                        </div>
+
+                        <button type="submit" id="btnAcumular" disabled
+                                class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow transition disabled:bg-gray-300 disabled:cursor-not-allowed">
+                            Sumar Puntos por Compra
+                        </button>
+                    </form>
+                </div>
+
+                <!-- PESTAÑA 2: Formulario de Canje -->
+                <div id="panelCanjear" class="hidden">
+                    <h2 class="text-md font-bold text-gray-700 mb-3">Canje de Recompensa</h2>
+                    <p class="text-xs text-gray-500 mb-4">Selecciona o ingresa la recompensa solicitada por el cliente.</p>
+
+                    <!-- Botones rápidos de recompensas -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Recompensas Populares</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <button type="button" class="btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs" data-nombre="10% off" data-puntos="50">
+                                <p class="font-bold text-gray-800">10% off</p>
+                                <span class="text-pink-600 font-semibold">50 Puntos</span>
+                            </button>
+                            <button type="button" class="btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs" data-nombre="Bebida gratis" data-puntos="75">
+                                <p class="font-bold text-gray-800">Bebida gratis</p>
+                                <span class="text-pink-600 font-semibold">75 Puntos</span>
+                            </button>
+                            <button type="button" class="btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs" data-nombre="Postre gratis" data-puntos="100">
+                                <p class="font-bold text-gray-800">Postre gratis</p>
+                                <span class="text-pink-600 font-semibold">100 Puntos</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="formCanje" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre de la Recompensa</label>
+                            <input type="text" id="nombreRecompensa" placeholder="ej. Rebanada de Pastel Especial" disabled required
+                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none disabled:bg-gray-100">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Puntos a Canjear</label>
+                            <input type="number" min="1" id="puntosACanjear" placeholder="ej. 20" disabled required
+                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none disabled:bg-gray-100">
+                        </div>
+
+                        <button type="submit" id="btnCanjear" disabled
+                                class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow transition disabled:bg-gray-300 disabled:cursor-not-allowed">
+                            Procesar Canje de Puntos
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para el lector de QR -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<!-- Script JS para conectar con las API REST -->
+<script>
+    let clienteActual = null;
+
+    // Elementos de la UI
+    const formBusqueda = document.getElementById('formBusqueda');
+    const inputTelefonoBusqueda = document.getElementById('telefonoBusqueda');
+    const btnEscanearQr = document.getElementById('btnEscanearQr');
+    const btnDetenerEscaneo = document.getElementById('btnDetenerEscaneo');
+    const lectorQr = document.getElementById('lectorQr');
+    let lectorCamara = null;
+
+// Variable para evitar procesar múltiples QR al mismo tiempo
+    let qrProcesando = false;
+
+    async function procesarCodigoQr(textoLeido) {
+    if (qrProcesando) return;
+    qrProcesando = true;
+
+    try {
+        // Apaga la cámara después de leer el primer QR.
+        if (lectorCamara) {
+            await lectorCamara.stop();
+            lectorCamara.clear();
+            lectorCamara = null;
+
+            lectorQr.hidden = true;
+            btnDetenerEscaneo.hidden = true;
+            btnEscanearQr.hidden = false;
+        }
+
+        const codigo = textoLeido.trim();
+        let telefono;
+
+        if (/^\d{10}$/.test(codigo)) {
+            // El QR de iOS contiene directamente el teléfono.
+            telefono = codigo;
+        } else if (codigo.includes('@')) {
+            // El QR de Google Wallet contiene el email.
+            const respuesta = await fetch(
+                `/api/clientes/buscar-por-email?email=${encodeURIComponent(codigo)}`
+            );
+
+            if (!respuesta.ok) {
+                throw new Error('No se encontró un cliente con ese email.');
+            }
+
+            const cliente = await respuesta.json();
+            telefono = cliente.telefono;
+        } else {
+            throw new Error('El QR no contiene un teléfono o email reconocible.');
+        }
+
+        if (!/^\d{10}$/.test(telefono || '')) {
+            throw new Error('No se pudo obtener un teléfono válido para el cliente.');
+        }
+
+        inputTelefonoBusqueda.value = telefono;
+        mensajeBusqueda.classList.add('hidden');
+
+        // Envía el formulario y activa la búsqueda que ya existe.
+        formBusqueda.requestSubmit();
+    } catch (error) {
+        console.error('Error al procesar el QR:', error);
+        mensajeBusqueda.innerText = error.message || 'No se pudo procesar el código QR.';
+        mensajeBusqueda.className =
+            'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700 mb-4';
+        mensajeBusqueda.classList.remove('hidden');
+    } finally {
+        qrProcesando = false;
+    }
+}
+    btnEscanearQr.addEventListener('click', async () => {
+    if (typeof Html5Qrcode === 'undefined') {
+        mensajeBusqueda.innerText = 'No se pudo cargar el lector QR. Revisa tu conexión a Internet y recarga la página.';
+        mensajeBusqueda.className = 'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700 mb-4';
+        mensajeBusqueda.classList.remove('hidden');
+        return;
+    }
+
+    lectorQr.hidden = false;
+    btnEscanearQr.hidden = true;
+    btnDetenerEscaneo.hidden = false;
+
+    lectorCamara = new Html5Qrcode('lectorQr');
+
+    try {
+        await lectorCamara.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            textoLeido => procesarCodigoQr(textoLeido),
+            () => {}
+        );
+    } catch (error) {
+        console.error('No se pudo iniciar la cámara:', error);
+        mensajeBusqueda.innerText = 'No se pudo iniciar la cámara. Revisa el permiso de cámara del navegador.';
+        mensajeBusqueda.className = 'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700 mb-4';
+        mensajeBusqueda.classList.remove('hidden');
+
+        lectorQr.hidden = true;
+        btnEscanearQr.hidden = false;
+        btnDetenerEscaneo.hidden = true;
+        lectorCamara = null;
+    }
+    });
+
+    const infoDiv = document.getElementById('infoCliente');
+    const mensajeBusqueda = document.getElementById('mensajeBusqueda');
+    const mensajeOperacion = document.getElementById('mensajeOperacion');
+
+    const clienteNombre = document.getElementById('clienteNombre');
+    const clienteTelefono = document.getElementById('clienteTelefono');
+    const clienteEmail = document.getElementById('clienteEmail');
+    const clientePuntos = document.getElementById('clientePuntos');
+    const clienteSO = document.getElementById('clienteSO');
+
+    // Botones de gestión
+    const btnReiniciarPuntos = document.getElementById('btnReiniciarPuntos');
+    const btnEliminarCliente = document.getElementById('btnEliminarCliente');
+
+    // Sección del Historial
+    const seccionHistorial = document.getElementById('seccionHistorial');
+    const listaHistorial = document.getElementById('listaHistorial');
+    const contadorHistorial = document.getElementById('contadorHistorial');
+    const historialVacio = document.getElementById('historialVacio');
+
+    // Pestañas
+    const tabBtnAcumular = document.getElementById('tabBtnAcumular');
+    const tabBtnCanjear = document.getElementById('tabBtnCanjear');
+    const panelAcumular = document.getElementById('panelAcumular');
+    const panelCanjear = document.getElementById('panelCanjear');
+
+    // Formulario acumular
+    const formTransaccion = document.getElementById('formTransaccion');
+    const montoCompra = document.getElementById('montoCompra');
+    const btnAcumular = document.getElementById('btnAcumular');
+    const previewPuntos = document.getElementById('previewPuntos');
+    const ptsCalculados = document.getElementById('ptsCalculados');
+
+    // Formulario canje
+    const formCanje = document.getElementById('formCanje');
+    const nombreRecompensa = document.getElementById('nombreRecompensa');
+    const puntosACanjear = document.getElementById('puntosACanjear');
+    const btnCanjear = document.getElementById('btnCanjear');
+
+    // Función para procesar el código QR leído y detener la cámara
+    btnDetenerEscaneo.addEventListener('click', async () => {
+    if (!lectorCamara) return;
+
+    try {
+        await lectorCamara.stop();
+        lectorCamara.clear();
+        lectorCamara = null;
+
+        lectorQr.hidden = true;
+        btnDetenerEscaneo.hidden = true;
+        btnEscanearQr.hidden = false;
+    } catch (error) {
+        console.error('No se pudo detener la cámara:', error);
+        mensajeBusqueda.innerText = 'No se pudo detener la cámara. Intenta cerrar el lector y vuelve a probar.';
+        mensajeBusqueda.className = 'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700 mb-4';
+        mensajeBusqueda.classList.remove('hidden');
+    }
+});
+
+    // Cambio de pestañas
+    tabBtnAcumular.addEventListener('click', () => {
+        tabBtnAcumular.className = "flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 border-pink-500 text-pink-600 transition flex items-center justify-center gap-2";
+        tabBtnCanjear.className = "flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition flex items-center justify-center gap-2";
+        panelAcumular.classList.remove('hidden');
+        panelCanjear.classList.add('hidden');
+    });
+
+    tabBtnCanjear.addEventListener('click', () => {
+        tabBtnCanjear.className = "flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 border-pink-500 text-pink-600 transition flex items-center justify-center gap-2";
+        tabBtnAcumular.className = "flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition flex items-center justify-center gap-2";
+        panelCanjear.classList.remove('hidden');
+        panelAcumular.classList.add('hidden');
+    });
+
+    // Vista previa de puntos a sumar mientras el cajero escribe el monto
+    montoCompra.addEventListener('input', () => {
+        const monto = parseFloat(montoCompra.value);
+        if (!isNaN(monto) && monto >= 10) {
+            ptsCalculados.innerText = Math.floor(monto / 10);
+            previewPuntos.classList.remove('hidden');
+        } else {
+            previewPuntos.classList.add('hidden');
+        }
+    });
+
+    // Botones rápidos de recompensa
+    document.querySelectorAll('.btn-quick-reward').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!clienteActual) return;
+            nombreRecompensa.value = btn.getAttribute('data-nombre');
+            puntosACanjear.value = btn.getAttribute('data-puntos');
+        });
+    });
+
+    // 1. Búsqueda de cliente por teléfono
+    formBusqueda.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const telefono = inputTelefonoBusqueda.value.trim();
+        mensajeOperacion.classList.add('hidden');
+
+        try {
+            const response = await fetch(`/api/clientes/${telefono}`);
+
+            if (response.ok) {
+                clienteActual = await response.json();
+
+                clienteNombre.innerText = clienteActual.nombre;
+                clienteTelefono.innerText = clienteActual.telefono;
+                clienteEmail.innerText = clienteActual.email || 'No registrado';
+                clienteEmail.title = clienteActual.email || '';
+                clienteSO.innerText = clienteActual.sistemaOperativo || 'N/A';
+
+                const saldo = clienteActual.puntosActuales ?? 0;
+                clientePuntos.innerText = saldo;
+
+                infoDiv.classList.remove('hidden');
+                mensajeBusqueda.classList.add('hidden');
+                seccionHistorial.classList.remove('hidden');
+                cargarHistorial(telefono);
+
+                // Habilitar controles
+                montoCompra.disabled = false;
+                btnAcumular.disabled = false;
+                nombreRecompensa.disabled = false;
+                puntosACanjear.disabled = false;
+                btnCanjear.disabled = false;
+            } else {
+                infoDiv.classList.add('hidden');
+                mensajeBusqueda.className = 'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+                mensajeBusqueda.innerText = `Cliente no encontrado (${telefono}). Verifica el número.`;
+                mensajeBusqueda.classList.remove('hidden');
+                deshabilitarControles();
+            }
+        } catch (err) {
+            console.error('Error al buscar cliente:', err);
+            mensajeBusqueda.className = 'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeBusqueda.innerText = 'Error de conexión con el servidor.';
+            mensajeBusqueda.classList.remove('hidden');
+            deshabilitarControles();
+        }
+    });
+
+    // 2. Acumular Puntos por Compra (POST /api/transacciones)
+    formTransaccion.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!clienteActual) return;
+
+        const telefono = clienteActual.telefono;
+        const monto = parseFloat(montoCompra.value);
+
+        btnAcumular.disabled = true;
+        btnAcumular.innerText = 'Procesando...';
+
+        try {
+            const response = await fetch('/api/transacciones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telefonoCliente: telefono,
+                    montoCompra: monto
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const saldoFinal = data.puntosTotalesCliente ?? (clienteActual.puntosActuales + data.puntosObtenidos);
+                clienteActual.puntosActuales = saldoFinal;
+                clientePuntos.innerText = saldoFinal;
+
+                mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-green-100 text-green-700';
+                mensajeOperacion.innerHTML = `¡Puntos asignados con éxito! (<strong>+${data.puntosObtenidos} pts</strong>). Saldo actualizado: <strong>${saldoFinal} pts</strong>`;
+                mensajeOperacion.classList.remove('hidden');
+
+                montoCompra.value = '';
+                previewPuntos.classList.add('hidden');
+                cargarHistorial(telefono);
+            } else {
+                let msg = data.mensaje || 'No se pudo registrar la compra.';
+                mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+                mensajeOperacion.innerText = msg;
+                mensajeOperacion.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error('Error en transacción:', err);
+            mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeOperacion.innerText = 'Error de conexión al procesar la compra.';
+            mensajeOperacion.classList.remove('hidden');
+        } finally {
+            btnAcumular.disabled = false;
+            btnAcumular.innerText = 'Sumar Puntos por Compra';
+        }
+    });
+
+    // 3. Procesar Canje de Puntos (POST /api/transacciones/canjear)
+    formCanje.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!clienteActual) return;
+
+        const telefono = clienteActual.telefono;
+        const recompensa = nombreRecompensa.value.trim();
+        const puntos = parseInt(puntosACanjear.value);
+
+        if (puntos > (clienteActual.puntosActuales ?? 0)) {
+            mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeOperacion.innerText = `Puntos insuficientes: El cliente tiene ${clienteActual.puntosActuales} pts y el canje requiere ${puntos} pts.`;
+            mensajeOperacion.classList.remove('hidden');
+            return;
+        }
+
+        btnCanjear.disabled = true;
+        btnCanjear.innerText = 'Canjeando...';
+
+        try {
+            const response = await fetch('/api/transacciones/canjear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telefonoCliente: telefono,
+                    nombreRecompensa: recompensa,
+                    puntosACanjear: puntos
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const saldoFinal = data.puntosRestantes;
+                clienteActual.puntosActuales = saldoFinal;
+                clientePuntos.innerText = saldoFinal;
+
+                mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-green-100 text-green-700';
+                mensajeOperacion.innerHTML = `¡Canje exitoso de <strong>${data.nombreRecompensa}</strong>! (-${data.puntosCanjeados} pts). Saldo restante: <strong>${saldoFinal} pts</strong>`;
+                mensajeOperacion.classList.remove('hidden');
+
+                nombreRecompensa.value = '';
+                puntosACanjear.value = '';
+                cargarHistorial(telefono);
+            } else {
+                let msg = data.mensaje || 'Error al procesar el canje de puntos.';
+                mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+                mensajeOperacion.innerText = msg;
+                mensajeOperacion.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error('Error al canjear:', err);
+            mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeOperacion.innerText = 'Error de conexión al procesar el canje.';
+            mensajeOperacion.classList.remove('hidden');
+        } finally {
+            btnCanjear.disabled = false;
+            btnCanjear.innerText = 'Procesar Canje de Puntos';
+        }
+    });
+
+    function deshabilitarControles() {
+        clienteActual = null;
+        montoCompra.disabled = true;
+        btnAcumular.disabled = true;
+        nombreRecompensa.disabled = true;
+        puntosACanjear.disabled = true;
+        btnCanjear.disabled = true;
+        previewPuntos.classList.add('hidden');
+        seccionHistorial.classList.add('hidden');
+        listaHistorial.innerHTML = '';
+    }
+
+    // Función para consultar y pintar el historial de compras y canjes
+    async function cargarHistorial(telefono) {
+        listaHistorial.innerHTML = ''; // Limpiamos la lista anterior
+        historialVacio.classList.add('hidden');
+
+        try {
+            const resp = await fetch(`/api/transacciones/cliente/${telefono}`);
+            if (!resp.ok) return;
+
+            const transacciones = await resp.json();
+            contadorHistorial.innerText = `${transacciones.length} movimientos`;
+
+            if (transacciones.length === 0) {
+                historialVacio.classList.remove('hidden');
+                return;
+            }
+
+            transacciones.forEach(t => {
+                const esCanje = t.puntosObtenidos < 0;
+                const fecha = new Date(t.fechaTransaccion).toLocaleString('es-MX', {
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                });
+
+                const badgeColor = esCanje
+                    ? 'bg-purple-100 text-purple-700 border-purple-200'
+                    : 'bg-green-100 text-green-700 border-green-200';
+
+                const titulo = esCanje ? '🎁 Canje de Recompensa' : `💰 Compra de $${t.montoCompra.toFixed(2)}`;
+                const puntosTexto = esCanje ? `${t.puntosObtenidos} pts` : `+${t.puntosObtenidos} pts`;
+
+                const itemHtml = `
+                    <div class="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 bg-gray-50 hover:bg-pink-50 transition text-xs">
+                        <div>
+                            <p class="font-bold text-gray-800">${titulo}</p>
+                            <span class="text-[11px] text-gray-400">${fecha}</span>
+                        </div>
+                        <span class="font-black px-2 py-1 rounded-md border ${badgeColor}">
+                            ${puntosTexto}
+                        </span>
+                    </div>
+                `;
+                listaHistorial.innerHTML += itemHtml;
+            });
+        } catch (error) {
+            console.error('Error al cargar historial:', error);
+        }
+    }
+    // 4. Reiniciar Puntos a Cero (PATCH /api/clientes/{telefono}/puntos)
+    btnReiniciarPuntos.addEventListener('click', async () => {
+        if (!clienteActual) return;
+
+        const confirmar = confirm(`¿Estás seguro de reiniciar los puntos de ${clienteActual.nombre} a 0?`);
+        if (!confirmar) return;
+
+        try {
+            const response = await fetch(`/api/clientes/${clienteActual.telefono}/puntos`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ puntos: 0 })
+            });
+
+            if (response.ok) {
+                clienteActual.puntosActuales = 0;
+                clientePuntos.innerText = '0';
+
+                mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-amber-100 text-amber-800';
+                mensajeOperacion.innerHTML = `⚠️ Los puntos de <strong>${clienteActual.nombre}</strong> han sido reiniciados a 0.`;
+                mensajeOperacion.classList.remove('hidden');
+            } else {
+                alert('No se pudieron reiniciar los puntos.');
+            }
+        } catch (error) {
+            console.error('Error al reiniciar puntos:', error);
+            alert('Error de conexión al reiniciar puntos.');
+        }
+    });
+
+    // 5. Eliminar Cliente (DELETE /api/clientes/{telefono})
+    btnEliminarCliente.addEventListener('click', async () => {
+        if (!clienteActual) return;
+
+        const confirmar = confirm(`⚠️ ¿PELIGRO: Estás seguro de eliminar definitivamente a ${clienteActual.nombre}? Esta acción no se puede deshacer.`);
+        if (!confirmar) return;
+
+        try {
+            const response = await fetch(`/api/clientes/${clienteActual.telefono}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert(`El cliente ${clienteActual.nombre} fue eliminado correctamente.`);
+                deshabilitarControles();
+                infoDiv.classList.add('hidden');
+                inputTelefonoBusqueda.value = '';
+                mensajeOperacion.classList.add('hidden');
+            } else {
+                alert('No se pudo eliminar el cliente.');
+            }
+        } catch (error) {
+            console.error('Error al eliminar cliente:', error);
+            alert('Error de conexión al eliminar cliente.');
+        }
+    });
+</script>
+</body>
+</html>
