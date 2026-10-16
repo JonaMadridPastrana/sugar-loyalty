@@ -34,8 +34,6 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
-      GOOGLE_WALLET_SERVICE_ACCOUNT_FILE: file:/run/secrets/google-wallet-credentials.json
-      GOOGLE_WALLET_ISSUER_ID: ${GOOGLE_WALLET_ISSUER_ID:?Set GOOGLE_WALLET_ISSUER_ID in .env}
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:?Set SPRING_MAIL_USERNAME in .env}
@@ -43,13 +41,5 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
-    volumes:
-      - type: bind
-        source: ${GOOGLE_WALLET_CREDENTIALS_PATH:-./secrets/google-wallet-credentials.json}
-        target: /run/secrets/google-wallet-credentials.json
-        read_only: true
-        bind:
-          create_host_path: false
-
 volumes:
   postgres_data_v18:

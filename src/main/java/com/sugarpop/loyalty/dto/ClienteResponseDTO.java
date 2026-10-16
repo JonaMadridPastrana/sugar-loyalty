@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "telefono",
         "email",
         "fechaNacimiento",
-        "sistemaOperativo",
         "puntosActuales",
         "fechaRegistro"
 })
@@ -25,6 +24,5 @@ public class ClienteResponseDTO {
     private String email;
     private LocalDate fechaNacimiento;
     private Integer puntosActuales;
-    private String sistemaOperativo;
     private LocalDateTime fechaRegistro;
 }

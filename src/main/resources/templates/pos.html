@@ -64,7 +64,6 @@
                             <p class="text-xs text-gray-500 uppercase font-bold">Cliente</p>
                             <h3 id="clienteNombre" class="text-lg font-bold text-gray-900"></h3>
                         </div>
-                        <span id="clienteSO" class="text-xs font-semibold px-2.5 py-1 bg-white text-gray-600 rounded-md border border-pink-200 shadow-sm"></span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
@@ -254,7 +253,7 @@
             // El QR de iOS contiene directamente el teléfono.
             telefono = codigo;
         } else if (codigo.includes('@')) {
-            // El QR de Google Wallet contiene el email.
+            // Acepta códigos anteriores que contienen el email del cliente.
             const respuesta = await fetch(
                 `/api/clientes/buscar-por-email?email=${encodeURIComponent(codigo)}`
             );
@@ -330,7 +329,6 @@
     const clienteTelefono = document.getElementById('clienteTelefono');
     const clienteEmail = document.getElementById('clienteEmail');
     const clientePuntos = document.getElementById('clientePuntos');
-    const clienteSO = document.getElementById('clienteSO');
 
     // Botones de gestión
     const btnReiniciarPuntos = document.getElementById('btnReiniciarPuntos');
@@ -432,7 +430,6 @@
                 clienteTelefono.innerText = clienteActual.telefono;
                 clienteEmail.innerText = clienteActual.email || 'No registrado';
                 clienteEmail.title = clienteActual.email || '';
-                clienteSO.innerText = clienteActual.sistemaOperativo || 'N/A';
 
                 const saldo = clienteActual.puntosActuales ?? 0;
                 clientePuntos.innerText = saldo;

@@ -50,40 +50,16 @@
             <input type="date" id="fechaNacimiento" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none">
         </div>
 
-        <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Sistema Operativo de tu Celular</label>
-            <select id="sistemaoperativo" name="sistemaOperativo" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none bg-white">
-                <option value="ANDROID">Android (Google Wallet)</option>
-                <option value="IOS">iPhone (Código QR)</option>
-            </select>
-        </div>
-
         <button type="submit" id="btnSubmit" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-200 mt-2">
-            ¡Registrarme y Obtener Tarjeta!
+            ¡Registrarme y Obtener QR!
         </button>
     </form>
 
     <!-- Cuadro de Notificación / Mensaje -->
     <div id="mensajeResultado" class="hidden mt-4 p-3 rounded-lg text-center text-sm font-medium"></div>
 
-    <!-- Sección de Google Wallet para usuarios Android -->
-    <div id="seccionWallet" class="mt-6 p-6 bg-pink-50 rounded-xl shadow-inner border border-pink-200 text-center hidden">
-        <h3 class="text-lg font-bold text-gray-800 mb-1">¡Tu Pase Google Wallet está listo!</h3>
-        <p class="text-sm text-gray-600 mb-4">Guarda tu tarjeta de lealtad Sugar Pop directamente en tu billetera digital de Google.</p>
 
-        <a id="btnGoogleWallet" href="#" target="_blank" rel="noopener noreferrer"
-           class="inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white font-semibold px-5 py-3 rounded-xl shadow-lg transition duration-200 w-full">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M21.35 11.1h-9.17v2.98h5.27c-.23 1.21-.92 2.23-1.95 2.92v2.43h3.16c1.85-1.7 2.92-4.21 2.92-7.23 0-.71-.06-1.4-.23-2.1z" fill="#4285F4"/>
-                <path d="M12.18 20.48c2.56 0 4.71-.85 6.28-2.31l-3.16-2.43c-.88.59-2 .94-3.12.94-2.4 0-4.44-1.62-5.17-3.8H3.72v2.51c1.57 3.12 4.79 5.09 8.46 5.09z" fill="#34A853"/>
-                <path d="M7.01 12.88c-.19-.57-.3-1.18-.3-1.8s.11-1.23.3-1.8V6.77H3.72C3.07 8.06 2.7 9.5 2.7 11.08s.37 3.02 1.02 4.31l3.29-2.51z" fill="#FBBC05"/>
-                <path d="M12.18 5.68c1.39 0 2.64.48 3.63 1.42l2.72-2.72C16.88 2.87 14.73 2 12.18 2 8.51 2 5.29 3.97 3.72 7.09l3.29 2.51c.73-2.18 2.77-3.8 5.17-3.8z" fill="#EA4335"/>
-            </svg>
-            <span>Guardar en Google Wallet</span>
-        </a>
-    </div>
-
-    <!-- Sección de Código QR para usuarios iOS (o fallback) -->
+    <!-- Sección de Código QR para usuarios iOS y Android -->
     <div id="seccionQr" class="mt-6 p-6 bg-white rounded-xl shadow-md border border-pink-100 text-center hidden">
         <h3 class="text-lg font-bold text-gray-800 mb-2">Tu Tarjeta Digital (Código QR)</h3>
         <p class="text-sm text-gray-600 mb-4">Muestra este código QR en caja para acumular puntos rápidamente.</p>
@@ -111,22 +87,17 @@
         btnSubmit.innerText = 'Procesando registro...';
 
         const telefonoVal = document.getElementById('telefono').value.trim();
-        const sistemaOp = document.getElementById('sistemaoperativo').value;
-
         const payload = {
             nombre: document.getElementById('nombre').value.trim(),
             apellido: document.getElementById('apellido').value.trim(),
             telefono: telefonoVal,
             email: document.getElementById('email').value.trim(),
-            fechaNacimiento: document.getElementById('fechaNacimiento').value,
-            sistemaOperativo: sistemaOp
+            fechaNacimiento: document.getElementById('fechaNacimiento').value
         };
 
         const mensajeDiv = document.getElementById('mensajeResultado');
-        const seccionWallet = document.getElementById('seccionWallet');
         const seccionQr = document.getElementById('seccionQr');
 
-        seccionWallet.classList.add('hidden');
         seccionQr.classList.add('hidden');
 
         try {
@@ -145,18 +116,10 @@
                 mensajeDiv.innerHTML = `¡Registro exitoso, <strong>${nombreCliente}</strong>! Ya puedes acumular tus puntos en caja.`;
                 mensajeDiv.classList.remove('hidden');
 
-                // Si seleccionó ANDROID y se generó walletUrl
-                if (sistemaOp === 'ANDROID' && data.walletUrl) {
-                    const btnWallet = document.getElementById('btnGoogleWallet');
-                    btnWallet.href = data.walletUrl;
-                    seccionWallet.classList.remove('hidden');
-                } else {
-                    // Si es iOS o si no hay walletUrl, mostramos el código QR
-                    const urlQr = `/api/clientes/${telefonoVal}/qr`;
-                    document.getElementById('imagenQrCliente').src = urlQr;
-                    document.getElementById('btnDescargarQr').href = urlQr;
-                    seccionQr.classList.remove('hidden');
-                }
+                const urlQr = `/api/clientes/${encodeURIComponent(telefonoVal)}/qr`;
+                document.getElementById('imagenQrCliente').src = urlQr;
+                document.getElementById('btnDescargarQr').href = `${urlQr}/descargar`;
+                seccionQr.classList.remove('hidden');
 
                 document.getElementById('formRegistro').reset();
             } else {
@@ -177,7 +140,7 @@
             mensajeDiv.classList.remove('hidden');
         } finally {
             btnSubmit.disabled = false;
-            btnSubmit.innerText = '¡Registrarme y Obtener Tarjeta!';
+            btnSubmit.innerText = '¡Registrarme y Obtener QR!';
         }
     });
 </script>

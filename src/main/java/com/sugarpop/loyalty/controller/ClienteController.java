@@ -5,7 +5,6 @@ import com.sugarpop.loyalty.dto.ClienteResponseDTO;
 import com.sugarpop.loyalty.dto.PuntosAjusteDTO;
 import com.sugarpop.loyalty.service.ClienteService;
 import com.sugarpop.loyalty.service.EmailService;
-import com.sugarpop.loyalty.service.GoogleWalletService;
 import com.sugarpop.loyalty.service.QrCodeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -23,47 +22,27 @@ public class ClienteController {
 
     private final ClienteService clienteService;
     private final QrCodeService qrCodeService;
-    private final GoogleWalletService googleWalletService; // <- 1. Añadimos el servicio de Wallet
     private final EmailService emailService;
 
-    public ClienteController(ClienteService clienteService, QrCodeService qrCodeService, GoogleWalletService googleWalletService, EmailService emailService) {
+    public ClienteController(ClienteService clienteService, QrCodeService qrCodeService, EmailService emailService) {
         this.clienteService = clienteService;
         this.qrCodeService = qrCodeService;
-        this.googleWalletService = googleWalletService;
         this.emailService = emailService;
     }
 
-    // 1. Registrar cliente con detección automática de OS (Android / iOS)
+    // 1. Registrar cliente y entregar su código QR
     @PostMapping
-    public ResponseEntity<?> registrarCliente(
-            @Valid @RequestBody ClienteRegistroDTO dto,
-            @RequestHeader(value = "User-Agent", defaultValue = "") String userAgent) {
+    public ResponseEntity<?> registrarCliente(@Valid @RequestBody ClienteRegistroDTO dto) {
 
         // Guardamos el cliente en la base de datos
         ClienteResponseDTO nuevoCliente = clienteService.registrarCliente(dto);
 
-// Generamos la tarjeta digital de Google Wallet
-        int puntosIniciales = 0;
-        String walletUrl = googleWalletService.crearObjetoLealtadCliente(
-                dto.getEmail(),
-                dto.getNombre(),
-                puntosIniciales
-        );
-
-// (Opcional para verla en la consola)
-        System.out.println("Wallet URL generada: " + walletUrl);
-
-        //  Enviar correo de bienvenida con la tarjeta digital (Wallet para Android o QR para iOS)
+        // Enviar el mismo código QR a todos los clientes, independientemente del dispositivo
         try {
-            byte[] qrBytes = null;
-            if ("IOS".equalsIgnoreCase(dto.getSistemaOperativo())) {
-                qrBytes = qrCodeService.generarQrCliente(dto.getTelefono(), 300, 300);
-            }
+            byte[] qrBytes = qrCodeService.generarQrCliente(dto.getTelefono(), 300, 300);
             emailService.enviarTarjetaBienvenida(
                     dto.getEmail(),
                     dto.getNombre(),
-                    dto.getSistemaOperativo(),
-                    walletUrl,
                     qrBytes
             );
         } catch (Exception e) {
@@ -73,8 +52,7 @@ public class ClienteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "success", true,
                 "mensaje", "¡Cliente registrado con éxito!",
-                "cliente", nuevoCliente,
-                "walletUrl", walletUrl != null ? walletUrl : ""
+                "cliente", nuevoCliente
         ));
     }
 
@@ -112,6 +90,14 @@ public class ClienteController {
         byte[] qrBytes = qrCodeService.generarQrCliente(telefono, 300, 300);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"qr-" + telefono + ".png\"")
+                .body(qrBytes);
+    }
+
+    @GetMapping(value = "/{telefono}/qr/descargar", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> descargarQrCliente(@PathVariable String telefono) {
+        byte[] qrBytes = qrCodeService.generarQrCliente(telefono, 300, 300);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"qr-" + telefono + ".png\"")
                 .body(qrBytes);
     }
 

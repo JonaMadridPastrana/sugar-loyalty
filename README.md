@@ -2,14 +2,14 @@
 
 **Sugar Loyalty** is a loyalty-program web application for Sugar Pop. It provides a customer registration flow and a point-of-sale interface for managing customer points, purchases, and reward redemptions.
 
-This repository is a portfolio project. It contains application source code and setup templates only; do not add real customer records, database backups, credentials, or Google Wallet service-account files.
+This repository is a portfolio project. It contains application source code and setup templates only; do not add real customer records, database backups, or credentials.
 
 ## Features
 
 - Customer registration and lookup.
 - Point-of-sale workflows for recording purchases, adjusting points, and redeeming rewards.
 - Transaction history backed by PostgreSQL.
-- QR code generation, email notifications, and optional Google Wallet integration.
+- QR code generation and email notifications for Android and iOS customers.
 - Server-rendered pages with Thymeleaf and browser-side JavaScript.
 
 ## Technology
@@ -18,7 +18,7 @@ This repository is a portfolio project. It contains application source code and 
 - Spring MVC, Thymeleaf, Bean Validation, Spring Data JPA
 - PostgreSQL
 - Docker and Docker Compose
-- Google Wallet and SMTP integrations (credentials required)
+- SMTP integration (credentials required)
 
 ## Architecture
 
@@ -39,7 +39,7 @@ Install Docker Desktop with Docker Compose, then run these commands in PowerShel
 Copy-Item .env.example .env
 ```
 
-Edit `.env` locally with the database, email, and Google Wallet settings. Never commit or share this file. Put the Google Wallet service-account JSON at `secrets/google-wallet-credentials.json` (or set `GOOGLE_WALLET_CREDENTIALS_PATH` in `.env` to its local path).
+Edit `.env` locally with the database and email settings. Never commit or share this file.
 
 Start the application:
 
@@ -68,7 +68,7 @@ On Windows:
 .\mvnw.cmd test
 ```
 
-The current integration test calls the Google Wallet API, so it requires working local Wallet credentials and network access. Do not configure production credentials in a public CI workflow.
+The test suite verifies that the Spring application context loads successfully.
 
 ## Security and deployment note
 

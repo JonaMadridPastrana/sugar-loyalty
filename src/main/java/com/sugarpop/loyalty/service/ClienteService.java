@@ -30,7 +30,7 @@ public class ClienteService {
         cliente.setTelefono(dto.getTelefono());
         cliente.setEmail(dto.getEmail());
         cliente.setFechaNacimiento(dto.getFechaNacimiento());
-        cliente.setSistemaOperativo(dto.getSistemaOperativo());
+        cliente.setSistemaOperativo("QR");
         cliente.setPuntosActuales(0); // Puntos iniciales por defecto
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
@@ -95,7 +95,6 @@ public class ClienteService {
         dto.setEmail(cliente.getEmail());
         dto.setFechaNacimiento(cliente.getFechaNacimiento());
         dto.setPuntosActuales(cliente.getPuntosActuales());
-        dto.setSistemaOperativo(cliente.getSistemaOperativo());
         dto.setFechaRegistro(cliente.getFechaRegistro());
         return dto;
     }

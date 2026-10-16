@@ -31,6 +31,4 @@ public class ClienteRegistroDTO {
     @NotNull(message = "La fecha de nacimiento no puede estar vacía")
     private LocalDate fechaNacimiento;
 
-    @NotBlank(message = "El sistema operativo no puede estar vacío")
-    private String sistemaOperativo;
 }
