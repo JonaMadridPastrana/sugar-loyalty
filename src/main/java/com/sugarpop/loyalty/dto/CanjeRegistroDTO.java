@@ -13,10 +13,8 @@ public class CanjeRegistroDTO {
     @Pattern(regexp = "^[0-9]{10}$", message = "El teléfono debe contener exactamente 10 dígitos numéricos")
     private String telefonoCliente;
 
-    @NotBlank(message = "El nombre de la recompensa es obligatorio")
-    private String nombreRecompensa;
+    @NotNull(message = "Debes seleccionar una recompensa")
+    @Min(value = 1, message = "El ID de la recompensa debe ser válido")
+    private Long recompensaId;
 
-    @NotNull(message = "Los puntos a canjear son obligatorios")
-    @Min(value = 1, message = "Debe canjear al menos 1 punto")
-    private Integer puntosACanjear;
-}
+    }

@@ -1,5 +1,6 @@
 package com.sugarpop.loyalty.exception;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -40,5 +41,16 @@ public class GlobalExceptionHandler {
         respuesta.put("mensaje", ex.getMessage());
 
         return new ResponseEntity<>(respuesta, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> manejarEntidadNoEncontrada(EntityNotFoundException ex) {
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("timestamp", LocalDateTime.now());
+        respuesta.put("status", HttpStatus.NOT_FOUND.value());
+        respuesta.put("error", "Recurso no encontrado");
+        respuesta.put("mensaje", ex.getMessage());
+
+        return new ResponseEntity<>(respuesta, HttpStatus.NOT_FOUND);
     }
 }

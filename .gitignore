@@ -44,3 +44,9 @@ build/
 /ARQUITECTURA_Y_NEGOCIO.md
 /DOCKER_MIGRATION_NOTES.md
 /.github/modernize/
+
+# Local desktop launcher and private QR assets
+/iniciar-SugarLoyalty.bat
+/Logosugarloyalty.ico
+/QR Sugar Loyalty Registro.png
+/QR flayer lealtad Sugar Loyalty.png

@@ -34,12 +34,8 @@ public class Cliente {
     @Column(name = "puntos_actuales")
     private Integer puntosActuales = 0; // Inicia siempre con 0 puntos
 
-    @Column(name = "sistema_operativo", nullable = false, length = 10)
-    String sistemaOperativo; // 'ANDROID' o 'IOS'
-
     @Column(name = "fecha_registro", updatable = false)
     private LocalDateTime fechaRegistro;
-
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaccion> transacciones = new ArrayList<>();

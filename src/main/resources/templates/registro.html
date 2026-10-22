@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sugar Loyalty - Registro</title>
     <!-- Tailwind CSS desde CDN para dar diseño rápido y moderno -->
@@ -79,6 +81,16 @@
 
 <!-- Script en JavaScript para conectar el formulario con el Backend -->
 <script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    function headersConCsrf(headers = {}) {
+        return {
+            ...headers,
+            [csrfHeader]: csrfToken
+        };
+    }
+
     document.getElementById('formRegistro').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -103,7 +115,7 @@
         try {
             const response = await fetch('/api/clientes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headersConCsrf({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(payload)
             });
 

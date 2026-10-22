@@ -1,7 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sugar Loyalty - Punto de Venta</title>
     <!-- Tailwind CSS por CDN -->
@@ -11,18 +13,50 @@
 
 <div class="max-w-5xl mx-auto">
     <!-- Encabezado del POS -->
-    <header class="flex items-center justify-between bg-white p-4 rounded-xl shadow-md mb-6 border border-pink-100">
-        <div class="flex items-center space-x-3">
-            <img src="/images/LogoBlanco.PNG" alt="Sugar Pop Logo" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
-            <div>
-                <h1 class="text-xl font-bold text-pink-600">SUGAR POP - Caja para gestionar clientes</h1>
-                <p class="text-xs text-gray-500">Módulo de Asignación y Canje de Puntos</p>
+    <header class="bg-white p-4 rounded-xl shadow-md mb-6 border border-pink-100">
+
+        <!-- Fila superior: Logo + titulo + estado de caja -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="/images/LogoBlanco.PNG" alt="Sugar Pop Logo" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-xl font-bold text-pink-600">SUGAR POP - Caja para gestionar clientes</h1>
+                    <p class="text-xs text-gray-500">Modulo de Asignacion y Canje de Puntos</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Indicador del mes actual — el JS lo rellena al cargar la pagina -->
+                <span id="indicadorMes" class="bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full">
+                    📅 Cargando mes...
+                </span>
+                <span class="inline-block w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+                <span class="bg-pink-100 text-pink-700 text-xs font-semibold px-3 py-1 rounded-full">Caja Activa</span>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="inline-block w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
-            <span class="bg-pink-100 text-pink-700 text-xs font-semibold px-3 py-1 rounded-full">Caja Activa</span>
+
+        <!-- Panel de cumpleañeros del mes (oculto hasta que el JS lo active) -->
+        <div id="bannerCumpleaneros" class="hidden mt-3 pt-3 border-t border-pink-100">
+            <div class="flex items-center justify-between">
+                <p class="text-sm font-bold text-purple-700 flex items-center gap-2">
+                    🎂 <span id="tituloCumpleaneros">Cumpleañeros del mes</span>
+                </p>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btnEnviarCorreosCumple"
+                            class="bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-lg transition">
+                        📧 Enviar correos del mes
+                    </button>
+                    <button type="button" id="btnToggleLista"
+                            onclick="document.getElementById('listaCumpleaneros').classList.toggle('hidden')"
+                            class="text-xs text-purple-500 hover:text-purple-700 font-semibold underline">
+                        Ver lista ▼
+                    </button>
+                </div>
+            </div>
+            <div id="listaCumpleaneros" class="hidden mt-2 flex flex-wrap gap-2">
+                <!-- El JS insertara aqui una etiqueta por cada cumpleañero del mes -->
+            </div>
         </div>
+
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -64,6 +98,11 @@
                             <p class="text-xs text-gray-500 uppercase font-bold">Cliente</p>
                             <h3 id="clienteNombre" class="text-lg font-bold text-gray-900"></h3>
                         </div>
+                        <!-- Badge de cumpleanero: oculto por defecto. El JS lo muestra si cumple anos este mes. -->
+                        <span id="badgeCumpleanos"
+                              class="hidden bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                            Cumpleanero este mes!
+                        </span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
@@ -168,36 +207,38 @@
                     <h2 class="text-md font-bold text-gray-700 mb-3">Canje de Recompensa</h2>
                     <p class="text-xs text-gray-500 mb-4">Selecciona o ingresa la recompensa solicitada por el cliente.</p>
 
-                    <!-- Botones rápidos de recompensas -->
+                    <!-- ======================================================== -->
+                    <!-- SECCIÓN: RECOMPENSAS DISPONIBLES Y BOTÓN DE ADMINISTRAR  -->
+                    <!-- ======================================================== -->
                     <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Recompensas Populares</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <button type="button" class="btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs" data-nombre="10% off" data-puntos="50">
-                                <p class="font-bold text-gray-800">10% off</p>
-                                <span class="text-pink-600 font-semibold">50 Puntos</span>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-semibold text-gray-600 uppercase">
+                                Recompensas Disponibles
+                            </label>
+                            <!-- Botón para abrir la ventana modal de gestión -->
+                            <button type="button" id="btnAbrirModalRecompensas"
+                                    class="text-xs text-pink-600 hover:text-pink-700 font-bold flex items-center gap-1 hover:underline transition">
+                                <span>⚙️</span> Administrar
                             </button>
-                            <button type="button" class="btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs" data-nombre="Bebida gratis" data-puntos="75">
-                                <p class="font-bold text-gray-800">Bebida gratis</p>
-                                <span class="text-pink-600 font-semibold">75 Puntos</span>
-                            </button>
-                            <button type="button" class="btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs" data-nombre="Postre gratis" data-puntos="100">
-                                <p class="font-bold text-gray-800">Postre gratis</p>
-                                <span class="text-pink-600 font-semibold">100 Puntos</span>
-                            </button>
+                        </div>
+                        <div id="listaRecompensas" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <p id="estadoRecompensas" class="text-sm text-gray-500">
+                                Cargando recompensas...
+                            </p>
                         </div>
                     </div>
 
                     <form id="formCanje" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre de la Recompensa</label>
-                            <input type="text" id="nombreRecompensa" placeholder="ej. Rebanada de Pastel Especial" disabled required
-                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none disabled:bg-gray-100">
+                            <input type="text" id="nombreRecompensa" placeholder="Selecciona una recompensa arriba" readonly disabled required
+                                   class="w-full px-4 py-2 border rounded-lg focus:outline-none bg-gray-50 text-gray-700 cursor-not-allowed disabled:bg-gray-100">
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Puntos a Canjear</label>
-                            <input type="number" min="1" id="puntosACanjear" placeholder="ej. 20" disabled required
-                                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none disabled:bg-gray-100">
+                            <input type="text" id="puntosACanjear" placeholder="0" readonly disabled required
+                                   class="w-full px-4 py-2 border rounded-lg focus:outline-none bg-gray-50 text-gray-700 cursor-not-allowed disabled:bg-gray-100">
                         </div>
 
                         <button type="submit" id="btnCanjear" disabled
@@ -212,12 +253,80 @@
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL: VENTANA EMERGENTE PARA ADMINISTRAR RECOMPENSAS (AÑADIR Y ELIMINAR) -->
+<!-- ========================================================================= -->
+<div id="modalRecompensas" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <!-- Contenedor blanco flotante del modal -->
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto border border-pink-100">
+        
+        <!-- Encabezado del modal: título descriptivo y botón para cerrar (X) -->
+        <div class="flex justify-between items-center border-b pb-3 border-gray-100">
+            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                <span>🎁</span> Administrar Catálogo de Recompensas
+            </h3>
+            <button type="button" id="btnCerrarModalRecompensas" 
+                    class="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none px-2 rounded hover:bg-gray-100 transition">
+                &times;
+            </button>
+        </div>
+
+        <!-- Formulario para dar de alta una nueva recompensa -->
+        <form id="formNuevaRecompensa" class="bg-pink-50 p-4 rounded-xl border border-pink-200 space-y-3">
+            <h4 class="text-xs font-bold uppercase text-pink-700 flex items-center gap-1">
+                <span>➕</span> Agregar Nueva Recompensa
+            </h4>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-600 uppercase mb-1">Nombre</label>
+                    <input type="text" id="nuevoNombreRecompensa" placeholder="ej. Rebanada de Pastel" required
+                           class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none bg-white">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-600 uppercase mb-1">Puntos requeridos</label>
+                    <input type="number" id="nuevosPuntosRecompensa" min="1" placeholder="ej. 50" required
+                           class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none bg-white">
+                </div>
+            </div>
+
+            <!-- Mensaje de estado específico del modal (éxito o error) -->
+            <div id="mensajeModalRecompensa" class="hidden text-xs p-2 rounded-lg font-medium text-center"></div>
+
+            <button type="submit" id="btnGuardarRecompensa"
+                    class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs py-2.5 rounded-lg shadow transition">
+                Guardar Recompensa
+            </button>
+        </form>
+
+        <!-- Lista dinámica de recompensas existentes con opción de eliminar -->
+        <div>
+            <h4 class="text-xs font-bold uppercase text-gray-500 mb-2">Recompensas Activas en Sistema</h4>
+            <div id="listaAdminRecompensas" class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                <p class="text-xs text-gray-400 text-center py-2">Cargando catálogo...</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
 <!-- Script para el lector de QR -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <!-- Script JS para conectar con las API REST -->
 <script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    function headersConCsrf(headers = {}) {
+        return {
+            ...headers,
+            [csrfHeader]: csrfToken
+        };
+    }
+
     let clienteActual = null;
+    let recompensaSeleccionada = null;
 
     // Elementos de la UI
     const formBusqueda = document.getElementById('formBusqueda');
@@ -358,6 +467,196 @@
     const nombreRecompensa = document.getElementById('nombreRecompensa');
     const puntosACanjear = document.getElementById('puntosACanjear');
     const btnCanjear = document.getElementById('btnCanjear');
+    const listaRecompensas = document.getElementById('listaRecompensas');
+
+    // =========================================================================
+    // ELEMENTOS DEL DOM: MODAL DE ADMINISTRACIÓN DE RECOMPENSAS
+    // =========================================================================
+    // Referencia a la ventana modal principal y sus botones de abrir/cerrar
+    const modalRecompensas = document.getElementById('modalRecompensas');
+    const btnAbrirModalRecompensas = document.getElementById('btnAbrirModalRecompensas');
+    const btnCerrarModalRecompensas = document.getElementById('btnCerrarModalRecompensas');
+
+    // Formulario e inputs para registrar una nueva recompensa
+    const formNuevaRecompensa = document.getElementById('formNuevaRecompensa');
+    const nuevoNombreRecompensa = document.getElementById('nuevoNombreRecompensa');
+    const nuevosPuntosRecompensa = document.getElementById('nuevosPuntosRecompensa');
+    const btnGuardarRecompensa = document.getElementById('btnGuardarRecompensa');
+
+    // Contenedores para la lista del modal y mensajes de alerta/notificación
+    const listaAdminRecompensas = document.getElementById('listaAdminRecompensas');
+    const mensajeModalRecompensa = document.getElementById('mensajeModalRecompensa');
+
+    // =========================================================================
+    // FUNCIONES DEL MODAL DE ADMINISTRACIÓN DE RECOMPENSAS
+    // =========================================================================
+
+    // Muestra alertas visuales dentro del modal (éxito en verde o error en rojo)
+    function mostrarMensajeModal(texto, esError = false) {
+        mensajeModalRecompensa.textContent = texto;
+        mensajeModalRecompensa.className = esError
+            ? 'text-xs p-2 rounded-lg font-medium text-center bg-red-100 text-red-700'
+            : 'text-xs p-2 rounded-lg font-medium text-center bg-green-100 text-green-700';
+        mensajeModalRecompensa.classList.remove('hidden');
+    }
+
+    // Abre el modal y consulta la lista actualizada de recompensas en BD
+    function abrirModalRecompensas() {
+        modalRecompensas.classList.remove('hidden');
+        mensajeModalRecompensa.classList.add('hidden');
+        cargarListaAdminRecompensas();
+    }
+
+    // Cierra el modal y resetea los campos del formulario
+    function cerrarModalRecompensas() {
+        modalRecompensas.classList.add('hidden');
+        formNuevaRecompensa.reset();
+        mensajeModalRecompensa.classList.add('hidden');
+    }
+
+    // Escuchador de clic en el botón "⚙️ Administrar" para abrir el modal
+    btnAbrirModalRecompensas.addEventListener('click', abrirModalRecompensas);
+
+    // Escuchador de clic en la "X" para cerrar el modal
+    btnCerrarModalRecompensas.addEventListener('click', cerrarModalRecompensas);
+
+    // Si el usuario hace clic en el fondo oscuro exterior, también cerramos el modal
+    modalRecompensas.addEventListener('click', (e) => {
+        if (e.target === modalRecompensas) {
+            cerrarModalRecompensas();
+        }
+    });
+
+    // Consulta el catálogo (GET /api/recompensas) y dibuja cada fila con su botón de eliminar
+    async function cargarListaAdminRecompensas() {
+        listaAdminRecompensas.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">Cargando catálogo...</p>';
+
+        try {
+            const resp = await fetch('/api/recompensas');
+            if (!resp.ok) {
+                throw new Error('Error al consultar el catálogo de recompensas');
+            }
+
+            const recompensas = await resp.json();
+            listaAdminRecompensas.replaceChildren();
+
+            if (recompensas.length === 0) {
+                const vacio = document.createElement('p');
+                vacio.className = 'text-xs text-gray-400 text-center py-2';
+                vacio.textContent = 'No hay recompensas registradas todavía. Agrega la primera arriba.';
+                listaAdminRecompensas.appendChild(vacio);
+                return;
+            }
+
+            // Recorremos las recompensas y creamos el HTML interactivo
+            recompensas.forEach(rec => {
+                const fila = document.createElement('div');
+                fila.className = 'flex items-center justify-between p-2.5 bg-gray-50 hover:bg-pink-50/50 rounded-lg border border-gray-100 text-xs transition';
+
+                const info = document.createElement('div');
+                const nombre = document.createElement('p');
+                nombre.className = 'font-bold text-gray-800';
+                nombre.textContent = rec.nombre;
+
+                const puntos = document.createElement('span');
+                puntos.className = 'text-pink-600 font-semibold';
+                puntos.textContent = `${rec.puntosRequeridos} puntos`;
+
+                info.append(nombre, puntos);
+
+                // Botón individual de papelera para desactivar esta recompensa
+                const btnEliminar = document.createElement('button');
+                btnEliminar.type = 'button';
+                btnEliminar.className = 'bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md transition text-xs flex items-center gap-1';
+                btnEliminar.title = `Eliminar ${rec.nombre}`;
+                btnEliminar.innerHTML = '🗑️ <span>Eliminar</span>';
+
+                btnEliminar.addEventListener('click', () => eliminarRecompensa(rec.id, rec.nombre));
+
+                fila.append(info, btnEliminar);
+                listaAdminRecompensas.appendChild(fila);
+            });
+        } catch (err) {
+            console.error('Error al cargar lista admin de recompensas:', err);
+            listaAdminRecompensas.innerHTML = '<p class="text-xs text-red-600 text-center py-2">No se pudo cargar la lista de recompensas.</p>';
+        }
+    }
+
+    // Procesa el envío del formulario para crear una nueva recompensa (POST /api/recompensas)
+    formNuevaRecompensa.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const nombre = nuevoNombreRecompensa.value.trim();
+        const puntos = parseInt(nuevosPuntosRecompensa.value, 10);
+
+        if (!nombre || isNaN(puntos) || puntos < 1) {
+            mostrarMensajeModal('Por favor ingresa un nombre válido y una cantidad de puntos mayor a 0.', true);
+            return;
+        }
+
+        btnGuardarRecompensa.disabled = true;
+        btnGuardarRecompensa.textContent = 'Guardando...';
+
+        try {
+            const resp = await fetch('/api/recompensas', {
+                method: 'POST',
+                headers: headersConCsrf({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    nombre: nombre,
+                    puntosRequeridos: puntos
+                })
+            });
+
+            if (resp.ok) {
+                mostrarMensajeModal(`¡Recompensa "${nombre}" guardada con éxito!`, false);
+                formNuevaRecompensa.reset();
+
+                // Refrescamos en tiempo real ambas vistas (la del modal y la del POS)
+                await cargarListaAdminRecompensas();
+                await cargarRecompensas();
+            } else {
+                const errData = await resp.json().catch(() => ({}));
+                mostrarMensajeModal(errData.mensaje || 'Error al guardar la recompensa.', true);
+            }
+        } catch (err) {
+            console.error('Error al crear recompensa:', err);
+            mostrarMensajeModal('Error de conexión con el servidor.', true);
+        } finally {
+            btnGuardarRecompensa.disabled = false;
+            btnGuardarRecompensa.textContent = 'Guardar Recompensa';
+        }
+    });
+
+    // Desactiva una recompensa en el backend (PATCH /api/recompensas/{id}/desactivar)
+    async function eliminarRecompensa(id, nombre) {
+        const confirmar = confirm(`¿Estás seguro de eliminar la recompensa "${nombre}"? Ya no estará disponible para canje.`);
+        if (!confirmar) return;
+
+        try {
+            const resp = await fetch(`/api/recompensas/${id}/desactivar`, {
+                method: 'PATCH',
+                headers: headersConCsrf()
+            });
+
+            if (resp.ok) {
+                mostrarMensajeModal(`Recompensa "${nombre}" eliminada correctamente.`, false);
+
+                // Si la recompensa eliminada era la que estaba seleccionada en el formulario de canje, la limpiamos
+                if (recompensaSeleccionada && recompensaSeleccionada.id === id) {
+                    limpiarSeleccionRecompensa();
+                }
+
+                // Refrescamos el catálogo en el modal y en el POS
+                await cargarListaAdminRecompensas();
+                await cargarRecompensas();
+            } else {
+                alert('No se pudo eliminar la recompensa.');
+            }
+        } catch (err) {
+            console.error('Error al desactivar recompensa:', err);
+            alert('Error de conexión al eliminar la recompensa.');
+        }
+    }
 
     // Función para procesar el código QR leído y detener la cámara
     btnDetenerEscaneo.addEventListener('click', async () => {
@@ -406,13 +705,87 @@
     });
 
     // Botones rápidos de recompensa
-    document.querySelectorAll('.btn-quick-reward').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!clienteActual) return;
-            nombreRecompensa.value = btn.getAttribute('data-nombre');
-            puntosACanjear.value = btn.getAttribute('data-puntos');
+    function seleccionarRecompensa(recompensa, botonElemento = null) {
+        recompensaSeleccionada = recompensa;
+        nombreRecompensa.value = recompensa.nombre;
+        puntosACanjear.value = recompensa.puntosRequeridos;
+        mensajeOperacion.classList.add('hidden');
+
+        document.querySelectorAll('.btn-quick-reward').forEach(b => {
+            b.classList.remove('border-pink-500', 'bg-pink-100', 'ring-2', 'ring-pink-300');
         });
-    });
+        if (botonElemento) {
+            botonElemento.classList.add('border-pink-500', 'bg-pink-100', 'ring-2', 'ring-pink-300');
+        }
+    }
+
+    function limpiarSeleccionRecompensa() {
+        recompensaSeleccionada = null;
+        nombreRecompensa.value = '';
+        puntosACanjear.value = '';
+        document.querySelectorAll('.btn-quick-reward').forEach(b => {
+            b.classList.remove('border-pink-500', 'bg-pink-100', 'ring-2', 'ring-pink-300');
+        });
+    }
+
+    async function cargarRecompensas() {
+        try {
+            const response = await fetch('/api/recompensas');
+
+            if (!response.ok) {
+                throw new Error(`El servidor respondió con estado ${response.status}`);
+            }
+
+            const recompensas = await response.json();
+            listaRecompensas.replaceChildren();
+
+            if (recompensas.length === 0) {
+                const mensaje = document.createElement('p');
+                mensaje.className = 'text-sm text-gray-500';
+                mensaje.textContent = 'Todavía no hay recompensas activas.';
+                listaRecompensas.appendChild(mensaje);
+                return;
+            }
+
+            recompensas.forEach((recompensa) => {
+                const boton = document.createElement('button');
+                boton.type = 'button';
+                boton.className = 'btn-quick-reward text-left p-2 rounded-lg border border-pink-200 hover:bg-pink-50 transition text-xs';
+
+                const nombre = document.createElement('p');
+                nombre.className = 'font-bold text-gray-800';
+                nombre.textContent = recompensa.nombre;
+
+                const puntos = document.createElement('span');
+                puntos.className = 'text-pink-600 font-semibold';
+                puntos.textContent = `${recompensa.puntosRequeridos} puntos`;
+
+                boton.append(nombre, puntos);
+
+                boton.addEventListener('click', () => {
+                    if (!clienteActual) {
+                        mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-amber-100 text-amber-800';
+                        mensajeOperacion.innerText = 'Debes buscar y seleccionar un cliente antes de elegir una recompensa.';
+                        mensajeOperacion.classList.remove('hidden');
+                        return;
+                    }
+                    seleccionarRecompensa(recompensa, boton);
+                });
+
+                listaRecompensas.appendChild(boton);
+            });
+        } catch (error) {
+            console.error('Error al cargar recompensas:', error);
+            listaRecompensas.replaceChildren();
+
+            const mensaje = document.createElement('p');
+            mensaje.className = 'text-sm text-red-600';
+            mensaje.textContent = 'No se pudieron cargar las recompensas. Recarga la página e inténtalo de nuevo.';
+            listaRecompensas.appendChild(mensaje);
+        }
+    }
+
+    cargarRecompensas();
 
     // 1. Búsqueda de cliente por teléfono
     formBusqueda.addEventListener('submit', async (e) => {
@@ -438,6 +811,7 @@
                 mensajeBusqueda.classList.add('hidden');
                 seccionHistorial.classList.remove('hidden');
                 cargarHistorial(telefono);
+                verificarCumpleanosBuscado(clienteActual);
 
                 // Habilitar controles
                 montoCompra.disabled = false;
@@ -445,6 +819,7 @@
                 nombreRecompensa.disabled = false;
                 puntosACanjear.disabled = false;
                 btnCanjear.disabled = false;
+                limpiarSeleccionRecompensa();
             } else {
                 infoDiv.classList.add('hidden');
                 mensajeBusqueda.className = 'p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
@@ -475,7 +850,7 @@
         try {
             const response = await fetch('/api/transacciones', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headersConCsrf({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     telefonoCliente: telefono,
                     montoCompra: monto
@@ -516,15 +891,27 @@
     // 3. Procesar Canje de Puntos (POST /api/transacciones/canjear)
     formCanje.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!clienteActual) return;
 
-        const telefono = clienteActual.telefono;
-        const recompensa = nombreRecompensa.value.trim();
-        const puntos = parseInt(puntosACanjear.value);
-
-        if (puntos > (clienteActual.puntosActuales ?? 0)) {
+        if (!clienteActual) {
             mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
-            mensajeOperacion.innerText = `Puntos insuficientes: El cliente tiene ${clienteActual.puntosActuales} pts y el canje requiere ${puntos} pts.`;
+            mensajeOperacion.innerText = 'Debes buscar y seleccionar un cliente antes de procesar un canje.';
+            mensajeOperacion.classList.remove('hidden');
+            return;
+        }
+
+        if (!recompensaSeleccionada || !recompensaSeleccionada.id) {
+            mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeOperacion.innerText = 'Debes seleccionar una recompensa del catálogo para realizar el canje.';
+            mensajeOperacion.classList.remove('hidden');
+            return;
+        }
+
+        const puntosRequeridos = Number(recompensaSeleccionada.puntosRequeridos);
+        const puntosCliente = clienteActual.puntosActuales ?? 0;
+
+        if (puntosRequeridos > puntosCliente) {
+            mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
+            mensajeOperacion.innerText = `Puntos insuficientes: El cliente tiene ${puntosCliente} pts y la recompensa "${recompensaSeleccionada.nombre}" requiere ${puntosRequeridos} pts.`;
             mensajeOperacion.classList.remove('hidden');
             return;
         }
@@ -535,11 +922,10 @@
         try {
             const response = await fetch('/api/transacciones/canjear', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headersConCsrf({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
-                    telefonoCliente: telefono,
-                    nombreRecompensa: recompensa,
-                    puntosACanjear: puntos
+                    telefonoCliente: clienteActual.telefono,
+                    recompensaId: recompensaSeleccionada.id
                 })
             });
 
@@ -554,9 +940,8 @@
                 mensajeOperacion.innerHTML = `¡Canje exitoso de <strong>${data.nombreRecompensa}</strong>! (-${data.puntosCanjeados} pts). Saldo restante: <strong>${saldoFinal} pts</strong>`;
                 mensajeOperacion.classList.remove('hidden');
 
-                nombreRecompensa.value = '';
-                puntosACanjear.value = '';
-                cargarHistorial(telefono);
+                limpiarSeleccionRecompensa();
+                cargarHistorial(clienteActual.telefono);
             } else {
                 let msg = data.mensaje || 'Error al procesar el canje de puntos.';
                 mensajeOperacion.className = 'mb-4 p-3 rounded-lg text-center text-sm font-medium bg-red-100 text-red-700';
@@ -584,6 +969,7 @@
         previewPuntos.classList.add('hidden');
         seccionHistorial.classList.add('hidden');
         listaHistorial.innerHTML = '';
+        limpiarSeleccionRecompensa();
     }
 
     // Función para consultar y pintar el historial de compras y canjes
@@ -633,6 +1019,150 @@
             console.error('Error al cargar historial:', error);
         }
     }
+
+        // ─────────────────────────────────────────────────────────────────────────
+    // FUNCIONES DE CUMPLEAÑOS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // NOMBRES DE LOS MESES EN ESPAÑOL
+    // Array donde el índice 0 = Enero, 1 = Febrero, ..., 11 = Diciembre
+    // Lo usamos para convertir el número del mes (0-11) a nombre en texto
+    const MESES_ES = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    /**
+     * FUNCIÓN: mostrarMesActual()
+     * Obtiene el mes actual del reloj del navegador y lo muestra en el header.
+     * new Date() → crea un objeto con la fecha/hora de HOY
+     * .getMonth() → devuelve número del mes (¡OJO! en JS: 0=Enero, 11=Diciembre)
+     */
+    function mostrarMesActual() {
+        const mesIndex = new Date().getMonth(); // 0-11
+        const anio = new Date().getFullYear();  // Ej: 2026
+        const nombreMes = MESES_ES[mesIndex];   // Ej: "Octubre"
+
+        // Buscamos el elemento del header por su id y le cambiamos el texto
+        document.getElementById('indicadorMes').textContent = `📅 ${nombreMes} ${anio}`;
+    }
+
+    /**
+     * FUNCIÓN: cargarCumpleaneros()
+     * Llama a GET /api/clientes/cumpleaneros para obtener la lista del mes.
+     * Si hay cumpleañeros, muestra el panel. Si no hay, lo deja oculto.
+     */
+    async function cargarCumpleaneros() {
+        try {
+            const resp = await fetch('/api/clientes/cumpleaneros');
+            if (!resp.ok) return; // Si el servidor falla, no hacemos nada
+
+            const cumpleaneros = await resp.json(); // Array de clientes
+
+            const banner = document.getElementById('bannerCumpleaneros');
+            const titulo = document.getElementById('tituloCumpleaneros');
+            const lista  = document.getElementById('listaCumpleaneros');
+
+            if (cumpleaneros.length === 0) {
+                // No hay cumpleañeros este mes: dejamos el banner oculto
+                banner.classList.add('hidden');
+                return;
+            }
+
+            // Hay cumpleañeros: mostramos el banner
+            banner.classList.remove('hidden');
+
+            // Calculamos en qué mes estamos para el título
+            const mesNombre = MESES_ES[new Date().getMonth()];
+            titulo.textContent = `🎂 ${cumpleaneros.length} cumpleañero(s) en ${mesNombre}`;
+
+            // Limpiamos la lista por si se recarga
+            lista.innerHTML = '';
+
+            // Por cada cumpleañero, creamos una etiqueta visual con su nombre y día
+            cumpleaneros.forEach(c => {
+                // Parseamos la fecha de nacimiento: viene como "1995-10-24" (string)
+                // Al agregar T00:00 evitamos problemas de zona horaria en JS
+                const fecha = new Date(c.fechaNacimiento + 'T00:00');
+                const dia   = fecha.getDate(); // Ej: 24
+
+                // Creamos el elemento HTML de la etiqueta
+                const tag = document.createElement('span');
+                tag.className = 'inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded-full';
+                tag.textContent = `🎂 ${c.nombre} (${dia})`;
+
+                lista.appendChild(tag);
+            });
+
+        } catch (err) {
+            // Si hay error de red, simplemente no mostramos el panel
+            console.error('Error al cargar cumpleañeros:', err);
+        }
+    }
+
+    /**
+     * FUNCIÓN: verificarCumpleanosBuscado(cliente)
+     * Recibe el objeto del cliente que se acaba de buscar.
+     * Compara su mes de nacimiento con el mes actual.
+     * Si coincide, muestra el badge "🎂 ¡Cumpleañero!" en la ficha.
+     */
+    function verificarCumpleanosBuscado(cliente) {
+        const badge = document.getElementById('badgeCumpleanos');
+
+        // Si no tiene fecha de nacimiento registrada, ocultamos el badge
+        if (!cliente.fechaNacimiento) {
+            badge.classList.add('hidden');
+            return;
+        }
+
+        // Parseamos la fecha de nacimiento del cliente
+        const fechaNac = new Date(cliente.fechaNacimiento + 'T00:00');
+        const mesNacimiento = fechaNac.getMonth();   // 0-11 (mes del cumpleaños)
+        const mesActual     = new Date().getMonth(); // 0-11 (mes de hoy)
+
+        if (mesNacimiento === mesActual) {
+            // ¡Sí cumple años este mes! Mostramos la etiqueta festiva
+            badge.classList.remove('hidden');
+        } else {
+            // No cumple este mes: ocultamos la etiqueta
+            badge.classList.add('hidden');
+        }
+    }
+
+    // ── Botón: Enviar correos de cumpleaños manualmente ───────────────────────
+    // Cuando el encargado hace clic en "📧 Enviar correos del mes",
+    // llamamos al endpoint POST /api/clientes/cumpleaneros/enviar-correos
+    document.getElementById('btnEnviarCorreosCumple').addEventListener('click', async () => {
+        const btn = document.getElementById('btnEnviarCorreosCumple');
+        btn.disabled = true;
+        btn.textContent = '⏳ Enviando...';
+
+        try {
+            const resp = await fetch('/api/clientes/cumpleaneros/enviar-correos', {
+                method: 'POST',
+                headers: headersConCsrf() // Incluimos el token CSRF (como en los otros POST)
+            });
+
+            if (resp.ok) {
+                alert('✅ Correos de cumpleaños enviados correctamente a todos los cumpleañeros del mes.');
+            } else {
+                alert('⚠️ Ocurrió un error al enviar los correos. Revisa la consola.');
+            }
+        } catch (err) {
+            console.error('Error al enviar correos:', err);
+            alert('❌ Error de conexión al intentar enviar correos.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '📧 Enviar correos del mes';
+        }
+    });
+
+    // ── Ejecutar al cargar la página ──────────────────────────────────────────
+    // Estas dos funciones se llaman inmediatamente cuando la página termina de cargar.
+    // Así, desde que el cajero abre el POS ya ve el mes y los cumpleañeros del mes.
+    mostrarMesActual();
+    cargarCumpleaneros();
+    
     // 4. Reiniciar Puntos a Cero (PATCH /api/clientes/{telefono}/puntos)
     btnReiniciarPuntos.addEventListener('click', async () => {
         if (!clienteActual) return;
@@ -643,7 +1173,7 @@
         try {
             const response = await fetch(`/api/clientes/${clienteActual.telefono}/puntos`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headersConCsrf({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ puntos: 0 })
             });
 
@@ -672,7 +1202,8 @@
 
         try {
             const response = await fetch(`/api/clientes/${clienteActual.telefono}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: headersConCsrf()
             });
 
             if (response.ok) {

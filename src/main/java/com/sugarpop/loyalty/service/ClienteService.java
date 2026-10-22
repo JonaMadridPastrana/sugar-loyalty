@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @Service
 public class ClienteService {
@@ -30,7 +31,6 @@ public class ClienteService {
         cliente.setTelefono(dto.getTelefono());
         cliente.setEmail(dto.getEmail());
         cliente.setFechaNacimiento(dto.getFechaNacimiento());
-        cliente.setSistemaOperativo("QR");
         cliente.setPuntosActuales(0); // Puntos iniciales por defecto
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
@@ -70,6 +70,7 @@ public class ClienteService {
         clienteRepository.delete(cliente);
     }
 
+    // REINICIAR PUNTOS DEL CLIENTE
     @Transactional
     public ClienteResponseDTO reiniciarPuntosCliente(String telefono, Integer nuevosPuntos) {
         // 1. Buscar al cliente por su teléfono
@@ -99,10 +100,37 @@ public class ClienteService {
         return dto;
     }
 
+    // OBTENER CLIENTE POR EMAIL
     public ClienteResponseDTO obtenerPorEmail(String email) {
         Cliente cliente = clienteRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró ningún cliente con el correo: " + email));
                 
         return mapearAResponseDTO(cliente);
+    }
+
+    // OBTENER CUMPLEAÑEROS DEL MES ACTUAL
+    // ─────────────────────────────────────────────────────────────────
+    // Este método le pregunta al Repository: "dame todos los clientes
+    // que cumplen años en el mes de HOY".
+    // LocalDate.now().getMonthValue() nos da el número del mes actual.
+    // Por ejemplo: si hoy es Octubre, devuelve 10.
+    // Luego convertimos cada Cliente (entidad) a ClienteResponseDTO
+    // usando el método mapearAResponseDTO() que ya existía en este Service.
+    public List<ClienteResponseDTO> obtenerCumpleanerosMesActual() {
+
+        // 1. Averiguamos en qué mes estamos (número del 1 al 12)
+        int mesActual = LocalDate.now().getMonthValue();
+
+        // 2. Le pedimos al Repository la lista de clientes de ese mes
+        //    Nota: clienteRepository es la variable que ya existe arriba en la clase
+        List<Cliente> cumpleaneros = clienteRepository.findByMesDeNacimiento(mesActual);
+
+        // 3. Convertimos cada objeto Cliente → ClienteResponseDTO
+        //    .stream() nos permite recorrer la lista uno a uno
+        //    .map(this::mapearAResponseDTO) aplica la conversión a cada elemento
+        //    .toList() junta el resultado en una nueva lista y la devuelve
+        return cumpleaneros.stream()
+                .map(this::mapearAResponseDTO)
+                .toList();
     }
 }

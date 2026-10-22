@@ -2,26 +2,36 @@ package com.sugarpop.loyalty.service;
 
 import com.sugarpop.loyalty.dto.TransaccionRegistroDTO;
 import com.sugarpop.loyalty.dto.TransaccionResponseDTO;
-import com.sugarpop.loyalty.model.Cliente;
-import com.sugarpop.loyalty.model.Transaccion;
-import com.sugarpop.loyalty.repository.ClienteRepository;
-import com.sugarpop.loyalty.repository.TransaccionRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import com.sugarpop.loyalty.dto.CanjeRegistroDTO;
 import com.sugarpop.loyalty.dto.CanjeResponseDTO;
+import com.sugarpop.loyalty.model.Cliente;
+import com.sugarpop.loyalty.model.Recompensa;
+import com.sugarpop.loyalty.model.Transaccion;
+import com.sugarpop.loyalty.repository.ClienteRepository;
+import com.sugarpop.loyalty.repository.RecompensaRepository;
+import com.sugarpop.loyalty.repository.TransaccionRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TransaccionService {
 
     private final TransaccionRepository transaccionRepository;
     private final ClienteRepository clienteRepository;
+    private final RecompensaRepository recompensaRepository;
+    private final EmailService emailService;
 
-    public TransaccionService(TransaccionRepository transaccionRepository, ClienteRepository clienteRepository) {
+    public TransaccionService(
+            TransaccionRepository transaccionRepository,
+            ClienteRepository clienteRepository,
+            RecompensaRepository recompensaRepository,
+            EmailService emailService) {
         this.transaccionRepository = transaccionRepository;
         this.clienteRepository = clienteRepository;
+        this.recompensaRepository = recompensaRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -45,7 +55,24 @@ public class TransaccionService {
         cliente.setPuntosActuales(cliente.getPuntosActuales() + puntosAbonados);
         clienteRepository.save(cliente);
 
-        // 5. Retornar el DTO de respuesta
+        // 5. Enviar notificación por correo con el resumen de la compra y catálogo de recompensas
+        try {
+            if (cliente.getEmail() != null && !cliente.getEmail().trim().isEmpty()) {
+                List<Recompensa> recompensasActivas = recompensaRepository.findByActivaTrueOrderByPuntosRequeridosAsc();
+                emailService.enviarNotificacionCompra(
+                        cliente.getEmail(),
+                        cliente.getNombre(),
+                        dto.getMontoCompra(),
+                        puntosAbonados,
+                        cliente.getPuntosActuales(),
+                        recompensasActivas
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Aviso al intentar enviar notificación de compra por correo: " + e.getMessage());
+        }
+
+        // 6. Retornar el DTO de respuesta
         return mapearAResponseDTO(transaccionGuardada);
     }
 
@@ -67,43 +94,42 @@ public class TransaccionService {
         dto.setPuntosTotalesCliente(t.getCliente().getPuntosActuales());
         return dto;
     }
-
     @Transactional
     public CanjeResponseDTO procesarCanje(CanjeRegistroDTO dto) {
-
-        // PASO A: Buscamos al cliente en PostgreSQL por su teléfono
         Cliente cliente = clienteRepository.findByTelefono(dto.getTelefonoCliente())
-                .orElseThrow(() -> new IllegalArgumentException("No se encontró ningún cliente con el teléfono: " + dto.getTelefonoCliente()));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No se encontró ningún cliente con el teléfono: " + dto.getTelefonoCliente()));
 
-        // PASO B: Verificamos si tiene puntos suficientes para la recompensa
-        if (cliente.getPuntosActuales() < dto.getPuntosACanjear()) {
+        Recompensa recompensa = recompensaRepository.findByIdAndActivaTrue(dto.getRecompensaId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "La recompensa no existe o está desactivada."));
+
+        int puntosRequeridos = recompensa.getPuntosRequeridos();
+
+        if (cliente.getPuntosActuales() < puntosRequeridos) {
             throw new IllegalArgumentException("Puntos insuficientes. El cliente tiene "
-                    + cliente.getPuntosActuales() + " puntos, pero la recompensa requiere " + dto.getPuntosACanjear() + " puntos.");
+                    + cliente.getPuntosActuales() + " puntos, pero la recompensa requiere "
+                    + puntosRequeridos + " puntos.");
         }
 
-        // PASO C: Restamos los puntos al cliente y guardamos su nuevo saldo
-        cliente.setPuntosActuales(cliente.getPuntosActuales() - dto.getPuntosACanjear());
+        cliente.setPuntosActuales(cliente.getPuntosActuales() - puntosRequeridos);
         clienteRepository.save(cliente);
 
-        // PASO D: Creamos el historial del canje en la base de datos
         Transaccion historial = new Transaccion();
-        historial.setCliente(cliente); // Ligamos este recibo a este cliente en particular
-        historial.setPuntosObtenidos(-dto.getPuntosACanjear()); // Guardamos los puntos en negativo (ej. -10) para reflejar la salida
-        historial.setMontoCompra(BigDecimal.ZERO); // En un canje no hay dinero gastado
-        historial.setDescripcion("canje: " + dto.getNombreRecompensa());
-
-        // Guardamos el recibo de la transacción en PostgreSQL
+        historial.setCliente(cliente);
+        historial.setPuntosObtenidos(-puntosRequeridos);
+        historial.setMontoCompra(BigDecimal.ZERO);
+        historial.setDescripcion("canje: " + recompensa.getNombre());
         transaccionRepository.save(historial);
 
-        // PASO E: Armamos la respuesta con los datos actualizados para responderle a Postman
         CanjeResponseDTO respuesta = new CanjeResponseDTO();
         respuesta.setTelefonoCliente(cliente.getTelefono());
         respuesta.setNombreCliente(cliente.getNombre());
-        respuesta.setNombreRecompensa(dto.getNombreRecompensa());
-        respuesta.setPuntosCanjeados(dto.getPuntosACanjear());
+        respuesta.setNombreRecompensa(recompensa.getNombre());
+        respuesta.setPuntosCanjeados(puntosRequeridos);
         respuesta.setPuntosRestantes(cliente.getPuntosActuales());
         respuesta.setMensaje("¡Canje realizado con éxito!");
 
         return respuesta;
     }
-    }
+}
