@@ -1,35 +1,38 @@
 # Sugar Loyalty
 
-**Sugar Loyalty** is a loyalty-program web application for Sugar Pop. It provides a customer registration flow and a point-of-sale interface for managing customer points, purchases, and reward redemptions.
+**Sugar Loyalty** is a loyalty-program and point-of-sale (POS) web application for **Sugar Pop**. It provides a public customer registration flow with QR digital loyalty cards and a protected point-of-sale interface for managing customer points, purchases, dynamic reward catalogs, and birthday campaigns.
 
 This repository is a portfolio project. It contains application source code and setup templates only; do not add real customer records, database backups, or credentials.
 
 ## Features
 
-- Customer registration and lookup.
-- Point-of-sale workflows for recording purchases, adjusting points, and redeeming rewards.
-- Transaction history backed by PostgreSQL.
-- QR code generation and email notifications for Android and iOS customers.
-- Server-rendered pages with Thymeleaf and browser-side JavaScript.
+- **Customer Registration & QR Digital Card:** Public registration form that generates a downloadable/scannable QR code and sends an HTML welcome email.
+- **Protected Point-of-Sale (POS):** Secured with **Spring Security** (authentication + CSRF protection) and camera-based QR scanning (`html5-qrcode`).
+- **Points & Purchase Tracking:** Automatically awards 1 point per $10.00 MXN spent, updates customer balances transactionally, and emails a purchase summary showing unlocked rewards and progress toward upcoming rewards.
+- **Dynamic Rewards Catalog:** In-POS reward manager to create and soft-delete (`activa = false`) rewards, with server-side validation of reward cost during redemption.
+- **Birthday Tracker & Automated Campaigns:** Displays the current month's birthday customers in the POS header, highlights birthday customers on lookup, and runs a monthly `@Scheduled` cron job (plus manual trigger) to email birthday customers a free-dessert voucher.
 
 ## Technology
 
-- Java 21 and Spring Boot
-- Spring MVC, Thymeleaf, Bean Validation, Spring Data JPA
-- PostgreSQL
-- Docker and Docker Compose
-- SMTP integration (credentials required)
+- **Java 21 LTS** and **Spring Boot 4.1.1**
+- **Spring MVC**, **Thymeleaf**, **Jakarta Bean Validation**, **Spring Data JPA**
+- **Spring Security** (Form Login & CSRF protection)
+- **Spring Scheduling** (`@EnableScheduling` / `@Scheduled` cron jobs)
+- **PostgreSQL 18**
+- **ZXing** (QR code generation) & **Spring Mail** (HTML multipart emails)
+- **Docker** and **Docker Compose**
 
 ## Architecture
 
-The application is organized into familiar backend layers:
+The application follows a layered backend architecture:
 
-- `controller/` handles web pages and HTTP API requests.
-- `dto/` defines request and response data and validation.
-- `service/` implements loyalty workflows and external integrations.
-- `repository/` accesses persisted data through Spring Data JPA.
-- `model/` contains the customer and transaction entities.
-- `templates/` contains the registration and POS pages.
+- `config/` configures Spring Security authentication and endpoint authorization rules.
+- `controller/` handles web views (`ViewController`) and REST API endpoints (`ClienteController`, `TransaccionController`, `RecompensaController`).
+- `dto/` defines request/response contracts and Jakarta validation rules.
+- `service/` implements business rules, transactional point operations, QR generation, HTML email templates, and scheduled birthday notifications (`CumpleanosScheduler`).
+- `repository/` accesses persisted data through Spring Data JPA derived queries and custom JPQL (`@Query`).
+- `model/` contains the JPA entities (`Cliente`, `Transaccion`, `Recompensa`).
+- `templates/` contains the registration (`registro.html`) and point-of-sale (`pos.html`) views.
 
 ## Run locally with Docker
 
@@ -39,7 +42,7 @@ Install Docker Desktop with Docker Compose, then run these commands in PowerShel
 Copy-Item .env.example .env
 ```
 
-Edit `.env` locally with the database and email settings. Never commit or share this file.
+Edit `.env` locally with your database and SMTP settings. Never commit or share this file.
 
 Start the application:
 
@@ -58,24 +61,14 @@ Stop the containers while keeping the database volume:
 docker compose down
 ```
 
-The database is persisted in a Docker volume. `docker compose down -v` also deletes that volume and its data; do not use it unless you intentionally want to erase the local database.
-
 ## Run tests
 
-On Windows:
+On Windows (using JDK 21):
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-The test suite verifies that the Spring application context loads successfully.
+## Portafolio (Español)
 
-## Security and deployment note
-
-The POS and API are intended for a controlled environment. Do not expose them to the public internet until authentication, authorization, and production deployment safeguards have been implemented and reviewed. Use fictitious data for demonstrations.
-
-## Portafolio
-
-Sugar Loyalty es una aplicación web de fidelización para Sugar Pop. Incluye registro de clientes y flujos de punto de venta para administrar puntos, compras y canjes.
-
-El proyecto demuestra una estructura backend por capas, persistencia con PostgreSQL, validación de solicitudes, integración con servicios externos y ejecución local con Docker Compose. Para una demostración, usa datos ficticios y credenciales de prueba almacenadas solo en archivos locales ignorados por Git.
+**Sugar Loyalty** es una aplicación web de fidelización y punto de venta (POS) para la repostería **Sugar Pop**. Incluye registro público de clientes con tarjeta QR digital, panel de caja protegido con Spring Security, catálogo administrable de recompensas, notificaciones dinámicas por correo electrónico tras cada compra y envío automatizado de regalos de cumpleaños cada inicio de mes.
