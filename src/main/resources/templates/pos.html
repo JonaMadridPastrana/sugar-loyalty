@@ -795,6 +795,7 @@
 
         try {
             const response = await fetch(`/api/clientes/${telefono}`);
+            if (response.redirected || response.url.includes('/login')) { window.location.reload(); return; }
 
             if (response.ok) {
                 clienteActual = await response.json();
@@ -1162,6 +1163,8 @@
     // Así, desde que el cajero abre el POS ya ve el mes y los cumpleañeros del mes.
     mostrarMesActual();
     cargarCumpleaneros();
+    // Mantener viva la sesión mientras la ventana del POS esté abierta (cada 10 min)
+    setInterval(() => { fetch('/api/recompensas').catch(() => {}); }, 600000);
     
     // 4. Reiniciar Puntos a Cero (PATCH /api/clientes/{telefono}/puntos)
     btnReiniciarPuntos.addEventListener('click', async () => {

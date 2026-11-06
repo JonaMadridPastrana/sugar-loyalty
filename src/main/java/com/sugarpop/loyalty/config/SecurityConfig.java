@@ -1,5 +1,6 @@
 package com.sugarpop.loyalty.config;
 
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -7,6 +8,9 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -15,7 +19,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/clientes", "/api/clientes/login-cliente")
+            )
             .authorizeHttpRequests(auth -> auth
+                // Permitir preflight CORS (OPTIONS) desde la PWA en Netlify
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                 // Páginas y recursos públicos
                 .requestMatchers(
                     "/",
@@ -26,15 +37,15 @@ public class SecurityConfig {
                     "/favicon.ico"
                 ).permitAll()
 
-                // El registro y el QR deben seguir disponibles sin iniciar sesión
-                .requestMatchers(HttpMethod.POST, "/api/clientes").permitAll()
+                // El registro, el login de cliente (teléfono + email) y el QR son públicos para la PWA
+                .requestMatchers(HttpMethod.POST, "/api/clientes", "/api/clientes/login-cliente").permitAll()
                 .requestMatchers(
                     HttpMethod.GET,
                     "/api/clientes/*/qr",
                     "/api/clientes/*/qr/descargar"
                 ).permitAll()
 
-                // POS y las APIs que utiliza: requieren autenticación
+                // POS y las APIs que utiliza: requieren autenticación del cajero
                 .requestMatchers(
                     "/pos",
                     "/api/transacciones/**",
@@ -51,5 +62,23 @@ public class SecurityConfig {
             .formLogin(Customizer.withDefaults());
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of(
+            "https://*.netlify.app",
+            "https://*.vercel.app",
+            "http://localhost:*",
+            "http://192.168.*:*"
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(false);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return source;
     }
 }

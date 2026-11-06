@@ -1,5 +1,6 @@
 package com.sugarpop.loyalty.controller;
 
+import com.sugarpop.loyalty.dto.ClienteLoginDTO;
 import com.sugarpop.loyalty.dto.ClienteRegistroDTO;
 import com.sugarpop.loyalty.dto.ClienteResponseDTO;
 import com.sugarpop.loyalty.dto.PuntosAjusteDTO;
@@ -7,13 +8,14 @@ import com.sugarpop.loyalty.service.ClienteService;
 import com.sugarpop.loyalty.service.CumpleanosScheduler;
 import com.sugarpop.loyalty.service.EmailService;
 import com.sugarpop.loyalty.service.QrCodeService;
+import com.sugarpop.loyalty.service.RecompensaService;
+import com.sugarpop.loyalty.service.TransaccionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.List;
 import java.util.Map;
@@ -26,12 +28,22 @@ public class ClienteController {
     private final QrCodeService qrCodeService;
     private final EmailService emailService;
     private final CumpleanosScheduler cumpleanosScheduler;
+    private final RecompensaService recompensaService;
+    private final TransaccionService transaccionService;
 
-    public ClienteController(ClienteService clienteService, QrCodeService qrCodeService, EmailService emailService, CumpleanosScheduler cumpleanosScheduler) {
+    public ClienteController(
+            ClienteService clienteService,
+            QrCodeService qrCodeService,
+            EmailService emailService,
+            CumpleanosScheduler cumpleanosScheduler,
+            RecompensaService recompensaService,
+            TransaccionService transaccionService) {
         this.clienteService = clienteService;
         this.qrCodeService = qrCodeService;
         this.emailService = emailService;
         this.cumpleanosScheduler = cumpleanosScheduler;
+        this.recompensaService = recompensaService;
+        this.transaccionService = transaccionService;
     }
 
     // 1. Registrar cliente y entregar su código QR
@@ -60,13 +72,26 @@ public class ClienteController {
         ));
     }
 
+    // 1.B Iniciar sesión segura del cliente desde la PWA (valida teléfono + correo en el servidor)
+    @PostMapping("/login-cliente")
+    public ResponseEntity<?> loginCliente(@Valid @RequestBody ClienteLoginDTO dto) {
+        ClienteResponseDTO cliente = clienteService.autenticarCliente(dto.getTelefono(), dto.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "cliente", cliente,
+                "recompensas", recompensaService.obtenerTodasLasRecompensas(),
+                "transacciones", transaccionService.obtenerHistorialCliente(cliente.getTelefono())
+        ));
+    }
+
     // 2. Obtener todos los clientes
     @GetMapping
     public ResponseEntity<List<ClienteResponseDTO>> obtenerTodos() {
         return ResponseEntity.ok(clienteService.obtenerTodosLosClientes());
     }
 
-    // 3. Buscar por teléfono
+    // 3. Buscar por teléfono (Protegido para el cajero POS)
     @GetMapping("/{telefono}")
     public ResponseEntity<ClienteResponseDTO> obtenerPorTelefono(@PathVariable String telefono) {
         return ResponseEntity.ok(clienteService.obtenerPorTelefono(telefono));
@@ -88,7 +113,7 @@ public class ClienteController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // 6. Generar e identificar código QR del cliente (
+    // 6. Generar e identificar código QR del cliente
     @GetMapping(value = "/{telefono}/qr", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> obtenerQrCliente(@PathVariable String telefono) {
         byte[] qrBytes = qrCodeService.generarQrCliente(telefono, 300, 300);
@@ -108,45 +133,23 @@ public class ClienteController {
     // 7. Buscar por correo electrónico
     @GetMapping("/buscar-por-email")
     public ResponseEntity<ClienteResponseDTO> obtenerPorEmail(
-        @RequestParam String email) {
-    return ResponseEntity.ok(clienteService.obtenerPorEmail(email));
-
+            @RequestParam String email) {
+        return ResponseEntity.ok(clienteService.obtenerPorEmail(email));
     }
 
     // 8. Obtener lista de clientes que cumplen años en el mes actual
-    // ─────────────────────────────────────────────────────────────────
-    // @GetMapping indica que este endpoint responde a peticiones GET.
-    // La URL completa será: GET /api/clientes/cumpleaneros
-    // El navegador (o el código JavaScript del POS) llamará a esta URL
-    // y recibirá un JSON con la lista de cumpleañeros del mes.
     @GetMapping("/cumpleaneros")
     public ResponseEntity<List<ClienteResponseDTO>> obtenerCumpleaneros() {
-
-        // Le delegamos el trabajo al Service.
-        // El Controller no sabe NI le importa cómo se buscan los cumpleañeros.
-        // Solo sabe que el Service le dará una lista lista para devolver.
         List<ClienteResponseDTO> cumpleaneros = clienteService.obtenerCumpleanerosMesActual();
-
-        // ResponseEntity.ok(...) envía la lista con código HTTP 200 (Todo bien ✅)
         return ResponseEntity.ok(cumpleaneros);
     }
 
     // 9. Disparar manualmente el envío de correos de cumpleaños del mes
-    // ─────────────────────────────────────────────────────────────────
-    // @PostMapping porque es una "acción" que modifica el estado del sistema
-    // (envía correos). Las acciones se hacen con POST, las consultas con GET.
-    // La URL será: POST /api/clientes/cumpleaneros/enviar-correos
     @PostMapping("/cumpleaneros/enviar-correos")
     public ResponseEntity<Map<String, String>> enviarCorreosCumpleanosManual() {
-
-        // Llamamos al mismo método que usa la tarea automática
-        // Así garantizamos comportamiento idéntico entre ambas formas de disparo
         cumpleanosScheduler.ejecutarEnvioCumpleanos();
-
-        // Devolvemos un mensaje de confirmación al navegador
         return ResponseEntity.ok(Map.of(
                 "mensaje", "✅ Correos de cumpleaños del mes enviados correctamente."
         ));
     }
-    
 }

@@ -108,27 +108,24 @@ public class ClienteService {
         return mapearAResponseDTO(cliente);
     }
 
+    // AUTENTICAR CLIENTE PARA LA PWA (TELÉFONO + EMAIL EN EL SERVIDOR)
+    public ClienteResponseDTO autenticarCliente(String telefono, String email) {
+        String mensajeError = "El número telefónico o el correo electrónico no coinciden con ningún cliente registrado.";
+
+        Cliente cliente = clienteRepository.findByTelefono(telefono.trim())
+                .orElseThrow(() -> new IllegalArgumentException(mensajeError));
+
+        if (cliente.getEmail() == null || !cliente.getEmail().trim().equalsIgnoreCase(email.trim())) {
+            throw new IllegalArgumentException(mensajeError);
+        }
+
+        return mapearAResponseDTO(cliente);
+    }
+
     // OBTENER CUMPLEAÑEROS DEL MES ACTUAL
-    // ─────────────────────────────────────────────────────────────────
-    // Este método le pregunta al Repository: "dame todos los clientes
-    // que cumplen años en el mes de HOY".
-    // LocalDate.now().getMonthValue() nos da el número del mes actual.
-    // Por ejemplo: si hoy es Octubre, devuelve 10.
-    // Luego convertimos cada Cliente (entidad) a ClienteResponseDTO
-    // usando el método mapearAResponseDTO() que ya existía en este Service.
     public List<ClienteResponseDTO> obtenerCumpleanerosMesActual() {
-
-        // 1. Averiguamos en qué mes estamos (número del 1 al 12)
         int mesActual = LocalDate.now().getMonthValue();
-
-        // 2. Le pedimos al Repository la lista de clientes de ese mes
-        //    Nota: clienteRepository es la variable que ya existe arriba en la clase
         List<Cliente> cumpleaneros = clienteRepository.findByMesDeNacimiento(mesActual);
-
-        // 3. Convertimos cada objeto Cliente → ClienteResponseDTO
-        //    .stream() nos permite recorrer la lista uno a uno
-        //    .map(this::mapearAResponseDTO) aplica la conversión a cada elemento
-        //    .toList() junta el resultado en una nueva lista y la devuelve
         return cumpleaneros.stream()
                 .map(this::mapearAResponseDTO)
                 .toList();
