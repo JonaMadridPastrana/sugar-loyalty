@@ -13,4 +13,4 @@ COPY --from=build --chown=10001:10001 /workspace/target/loyalty-0.0.1-SNAPSHOT.j
 
 USER 10001:10001
 EXPOSE 8081
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Dfile.encoding=UTF-8", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]

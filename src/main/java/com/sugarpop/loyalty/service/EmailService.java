@@ -97,12 +97,25 @@ public class EmailService {
         if (texto == null) {
             return "";
         }
-        return texto
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\r", "")
-                .replace("\n", "\\n")
-                .replace("\t", "\\t");
+        StringBuilder sb = new StringBuilder(texto.length() + 64);
+        for (int i = 0; i < texto.length(); i++) {
+            char c = texto.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\r' -> {}
+                case '\n' -> sb.append("\\n");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 32 || c > 126) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 
     /**
