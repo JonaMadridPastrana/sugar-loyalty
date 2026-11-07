@@ -1,8 +1,16 @@
 package com.sugarpop.loyalty.service;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import com.sugarpop.loyalty.model.Recompensa;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,12 +24,85 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final HttpClient httpClient;
 
     @Value("${spring.mail.username:sugarpopcakes14@gmail.com}")
     private String correoRemitente;
 
+    @Value("${google.script.webhook.url:https://script.google.com/macros/s/AKfycbzOfbOJCjYTIbhdX-Sf_wXsOAS5dKkM9rhoEdt2wuXPiOzwQ1d7I6tajauzf4G0Pd1K0Q/exec}")
+    private String googleScriptWebhookUrl;
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+    }
+
+    /**
+     * Envía el correo mediante HTTPS (puerto 443) hacia Google Apps Script para evitar
+     * el bloqueo de puertos SMTP (587/465) en el plan gratuito de Render.
+     */
+    private boolean enviarPorGoogleScript(String destinatarioEmail, String asunto, String htmlBody, byte[] qrBytes) {
+        if (googleScriptWebhookUrl == null || googleScriptWebhookUrl.isBlank()) {
+            return false;
+        }
+        try {
+            String qrBase64 = (qrBytes != null && qrBytes.length > 0)
+                    ? Base64.getEncoder().encodeToString(qrBytes)
+                    : "";
+
+            String jsonPayload = "{"
+                    + "\"to\":\"" + escaparJson(destinatarioEmail) + "\","
+                    + "\"subject\":\"" + escaparJson(asunto) + "\","
+                    + "\"htmlBody\":\"" + escaparJson(htmlBody) + "\","
+                    + "\"qrBase64\":\"" + qrBase64 + "\""
+                    + "}";
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(googleScriptWebhookUrl.trim()))
+                    .timeout(Duration.ofSeconds(15))
+                    .header("Content-Type", "application/json; charset=UTF-8")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+
+            if (status == 200 || status == 302) {
+                Optional<String> location = response.headers().firstValue("location");
+                if (status == 302 && location.isPresent()) {
+                    HttpRequest getRedirect = HttpRequest.newBuilder()
+                            .uri(URI.create(location.get()))
+                            .timeout(Duration.ofSeconds(10))
+                            .GET()
+                            .build();
+                    HttpResponse<String> redirectResp = httpClient.send(getRedirect, HttpResponse.BodyHandlers.ofString());
+                    System.out.println("✅ Correo enviado vía HTTPS Google Apps Script a " + destinatarioEmail + ": " + redirectResp.body());
+                } else {
+                    System.out.println("✅ Correo enviado vía HTTPS Google Apps Script a " + destinatarioEmail);
+                }
+                return true;
+            }
+            System.err.println("⚠️ Respuesta inesperada de Google Apps Script (" + status + "): " + response.body());
+            return false;
+        } catch (Exception e) {
+            System.err.println("⚠️ Error al enviar vía Google Apps Script: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private String escaparJson(String texto) {
+        if (texto == null) {
+            return "";
+        }
+        return texto
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
     }
 
     /**
@@ -68,6 +149,11 @@ public class EmailService {
             html.append("</div>");
 
             helper.setText(html.toString(), true); // true = interpretar como HTML
+
+            String asunto = "🧁 ¡Bienvenido a Sugar Pop! Aquí está tu Tarjeta de Lealtad";
+            if (enviarPorGoogleScript(destinatarioEmail, asunto, html.toString(), qrBytes)) {
+                return;
+            }
 
             if (qrBytes != null && qrBytes.length > 0) {
                 ByteArrayResource qrResource = new ByteArrayResource(qrBytes);
@@ -207,6 +293,11 @@ public class EmailService {
             html.append("</div>");
             html.append("</div>");
 
+            String asunto = "🧁 ¡Gracias por tu compra en Sugar Pop! Has sumado +" + puntosGanados + " puntos";
+            if (enviarPorGoogleScript(destinatarioEmail, asunto, html.toString(), null)) {
+                return;
+            }
+
             helper.setText(html.toString(), true);
             mailSender.send(mensaje);
             System.out.println("¡Notificación de compra enviada exitosamente a: " + destinatarioEmail + "!");
@@ -293,6 +384,11 @@ public class EmailService {
             // Cierre del contenedor principal
             html.append("</div>");
             // ─────────────────────────────────────────────────────────────────────
+
+            String asunto = "🎂 ¡Feliz Cumpleaños de parte de Sugar Pop! Tu postre gratis te espera 🧁";
+            if (enviarPorGoogleScript(destinatarioEmail, asunto, html.toString(), null)) {
+                return;
+            }
 
             // Le indicamos al helper que el cuerpo del correo es HTML (true = HTML)
             helper.setText(html.toString(), true);
