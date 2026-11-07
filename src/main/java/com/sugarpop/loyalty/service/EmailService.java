@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,7 +17,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:sugarpopcakes14@gmail.com}")
     private String correoRemitente;
 
     public EmailService(JavaMailSender mailSender) {
@@ -26,6 +27,7 @@ public class EmailService {
     /**
      * Envía un correo con diseño HTML de bienvenida y la tarjeta de fidelización.
      */
+    @Async
     public void enviarTarjetaBienvenida(String destinatarioEmail, String nombreCliente, byte[] qrBytes) {
         try {
             MimeMessage mensaje = mailSender.createMimeMessage();
@@ -91,6 +93,7 @@ public class EmailService {
      * 3. Recompensas activas que el cliente ya puede canjear.
      * 4. Próximas recompensas del catálogo y cuántos puntos le faltan para alcanzarlas.
      */
+    @Async
     public void enviarNotificacionCompra(
             String destinatarioEmail,
             String nombreCliente,
@@ -224,6 +227,7 @@ public class EmailService {
      * @param diaCumpleanos      Día del mes en que cumple años (ej: 24)
      * @param mesNombre          Nombre del mes en español (ej: "Octubre")
      */
+    @Async
     public void enviarCorreoCumpleanos(String destinatarioEmail, String nombreCliente,
                                        int diaCumpleanos, String mesNombre) {
         try {
