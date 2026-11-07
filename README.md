@@ -18,10 +18,10 @@ This repository is a portfolio project. It contains application source code and 
 - **Java 21 LTS** and **Spring Boot 4.1.1**
 - **Spring MVC**, **Thymeleaf**, **Jakarta Bean Validation**, **Spring Data JPA**
 - **Spring Security** (Form Login, CSRF protection & CORS configuration for PWA)
-- **Spring Scheduling** (`@EnableScheduling` / `@Scheduled` cron jobs)
+- **Spring Scheduling & Async** (`@EnableScheduling`, `@Scheduled` cron jobs, and `@EnableAsync` / `@Async` non-blocking background email dispatch)
 - **PostgreSQL** (Cloud deployment on **Neon.tech** / local PostgreSQL 18)
-- **ZXing** (QR code generation) & **Spring Mail** (`MailConfig` + HTML multipart emails)
-- **Docker** (Cloud deployment on **Render.com** & local Docker Compose)
+- **ZXing** (QR code generation) & **Dual Email Delivery** (HTTPS Webhook relay via Google Apps Script with Unicode-safe JSON + `MailConfig` SMTP fallback with 5s timeouts)
+- **Docker** (Cloud deployment on **Render.com** with `UTF-8` JVM encoding & local Docker Compose)
 
 ## Architecture
 
