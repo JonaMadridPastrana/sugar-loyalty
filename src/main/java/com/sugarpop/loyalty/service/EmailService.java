@@ -53,10 +53,17 @@ public class EmailService {
                     ? Base64.getEncoder().encodeToString(qrBytes)
                     : "";
 
+            // En el asunto (texto plano) reemplazamos emojis de 4 bytes (> U+FFFF) por ✨ (U+2728, BMP)
+            // porque GmailApp.sendEmail en Google Apps Script codifica los pares subrogados en CESU-8 ().
+            String asuntoSeguro = limpiarEmojisAsunto(asunto);
+            // En el cuerpo HTML convertimos todos los emojis > U+FFFF a entidades HTML (&#x1f9c1;, &#x1f370;, etc.)
+            // para que Gmail en celular y PC los dibuje perfectamente a todo color sin pasar como pares subrogados.
+            String htmlSeguro = convertirEmojisAEntidadesHtml(htmlBody);
+
             String jsonPayload = "{"
                     + "\"to\":\"" + escaparJson(destinatarioEmail) + "\","
-                    + "\"subject\":\"" + escaparJson(asunto) + "\","
-                    + "\"htmlBody\":\"" + escaparJson(htmlBody) + "\","
+                    + "\"subject\":\"" + escaparJson(asuntoSeguro) + "\","
+                    + "\"htmlBody\":\"" + escaparJson(htmlSeguro) + "\","
                     + "\"qrBase64\":\"" + qrBase64 + "\""
                     + "}";
 
@@ -91,6 +98,36 @@ public class EmailService {
             System.err.println("⚠️ Error al enviar vía Google Apps Script: " + e.getMessage());
             return false;
         }
+    }
+
+    private String limpiarEmojisAsunto(String asunto) {
+        if (asunto == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        asunto.codePoints().forEach(cp -> {
+            if (cp > 0xFFFF) {
+                sb.append('\u2728'); // ✨ (BMP Unicode, compatible al 100% con GmailApp en asuntos)
+            } else if (cp != 0xFE0F) {
+                sb.appendCodePoint(cp);
+            }
+        });
+        return sb.toString();
+    }
+
+    private String convertirEmojisAEntidadesHtml(String html) {
+        if (html == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(html.length() + 128);
+        html.codePoints().forEach(cp -> {
+            if (cp > 0xFFFF) {
+                sb.append("&#x").append(Integer.toHexString(cp)).append(";");
+            } else {
+                sb.appendCodePoint(cp);
+            }
+        });
+        return sb.toString();
     }
 
     private String escaparJson(String texto) {
