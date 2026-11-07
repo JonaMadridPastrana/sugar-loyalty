@@ -1,0 +1,26 @@
+{
+  "name": "Sugar Pop - Repostería Creativa",
+  "short_name": "Sugar Pop",
+  "description": "¡Suma puntos y canjea tus postres favoritos en Sugar Pop Repostería Creativa!",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3E8FF",
+  "theme_color": "#9333EA",
+  "lang": "es-MX",
+  "icons": [
+    {
+      "src": "/sugar-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/LogoBlanco.PNG",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#FFF0F5"/>
+  <circle cx="256" cy="256" r="200" fill="#FCE7F3"/>
+  <!-- Cupcake Base -->
+  <path d="M168 296L192 408C194.5 419.5 204.7 428 216.5 428H295.5C307.3 428 317.5 419.5 320 408L344 296H168Z" fill="#F472B6"/>
+  <path d="M210 296L222 428M256 296V428M302 296L290 428" stroke="#DB2777" stroke-width="10" stroke-linecap="round"/>
+  <!-- Frosting -->
+  <path d="M148 272C148 245.5 169.5 224 196 224C198.2 224 200.3 224.2 202.4 224.5C211.7 198.6 236.5 180 265.6 180C296.4 180 322.3 200.8 330.2 229.1C350.8 233.5 366 251.9 366 273.8C366 299.3 345.3 320 319.8 320H196C169.5 320 148 298.5 148 272Z" fill="#FFFBFD" stroke="#F472B6" stroke-width="12"/>
+  <!-- Cherry on top -->
+  <circle cx="256" cy="148" r="30" fill="#E11D48"/>
+  <path d="M256 118C256 96 274 78 296 74" stroke="#BE123C" stroke-width="10" stroke-linecap="round"/>
+  <!-- Sprinkles -->
+  <rect x="210" y="245" width="22" height="10" rx="5" transform="rotate(-20 210 245)" fill="#FBBF24"/>
+  <rect x="285" y="250" width="22" height="10" rx="5" transform="rotate(25 285 250)" fill="#60A5FA"/>
+  <rect x="248" y="220" width="22" height="10" rx="5" transform="rotate(10 248 220)" fill="#34D399"/>
+  <rect x="245" y="270" width="22" height="10" rx="5" transform="rotate(-12 245 270)" fill="#FB7185"/>
+</svg>
+

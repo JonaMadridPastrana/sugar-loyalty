@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Sugar Loyalty - Tarjeta Digital | Sugar Pop</title>
+
+    <!-- Configuración PWA General -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#9333EA" />
+    <meta name="description" content="¡Suma puntos y canjea tus postres favoritos en Sugar Pop Repostería Creativa!" />
+    <link rel="icon" type="image/svg+xml" href="/sugar-icon.svg" />
+
+    <!-- Compatibilidad PWA para iOS (iPhone / iPad) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Sugar Pop" />
+    <link rel="apple-touch-icon" href="/LogoBlanco.PNG" />
+    <script>
+      // Limpia cachés antiguas de Service Worker en iOS Safari si hubo una actualización
+      if ('caches' in window) {
+        caches.keys().then(function (names) {
+          names.forEach(function (name) {
+            if (name !== 'sugar-pop-pwa-v4') {
+              caches.delete(name);
+            }
+          });
+        });
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-Cqajb7GD.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Dhz0-Saw.css">
+  </head>
+  <body class="bg-purple-100 text-gray-800 antialiased selection:bg-purple-200 selection:text-purple-900">
+    <div id="root"></div>
+  </body>
+</html>

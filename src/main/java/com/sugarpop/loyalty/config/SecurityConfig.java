@@ -54,9 +54,16 @@ public class SecurityConfig {
                 // Permitir preflight CORS (OPTIONS) desde la PWA en Netlify
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Páginas y recursos públicos
+                // Páginas y recursos públicos (incluyendo la PWA de clientes en /)
                 .requestMatchers(
                     "/",
+                    "/index.html",
+                    "/manifest.json",
+                    "/sw.js",
+                    "/sugar-icon.svg",
+                    "/LogoBlanco.PNG",
+                    "/FondoRegistro.jpg",
+                    "/assets/**",
                     "/registro",
                     "/images/**",
                     "/css/**",
