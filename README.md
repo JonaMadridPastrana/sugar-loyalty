@@ -1,13 +1,14 @@
 # Sugar Loyalty
 
-**Sugar Loyalty** is a loyalty-program and point-of-sale (POS) web application for **Sugar Pop**. It provides a public customer registration flow with QR digital loyalty cards and a protected point-of-sale interface for managing customer points, purchases, dynamic reward catalogs, and birthday campaigns.
+**Sugar Loyalty** is a full-stack loyalty-program and point-of-sale (POS) platform for **Sugar Pop**. It provides a public customer registration flow, a Progressive Web App (PWA) customer portal with QR digital loyalty cards, and a protected point-of-sale interface for managing customer points, purchases, dynamic reward catalogs, and birthday campaigns.
 
 This repository is a portfolio project. It contains application source code and setup templates only; do not add real customer records, database backups, or credentials.
 
 ## Features
 
-- **Customer Registration & QR Digital Card:** Public registration form that generates a downloadable/scannable QR code and sends an HTML welcome email.
-- **Protected Point-of-Sale (POS):** Secured with **Spring Security** (authentication + CSRF protection) and camera-based QR scanning (`html5-qrcode`).
+- **Customer Registration & QR Digital Card:** Public registration form (`POST /api/clientes`) that generates a downloadable/scannable QR code and sends an HTML welcome email.
+- **PWA Customer Portal Authentication:** Server-side credential verification (`POST /api/clientes/login-cliente` via `ClienteLoginDTO`) that validates both phone number and registered email before returning customer points, active rewards, and transaction history, with CORS configured for the mobile PWA hosted on Netlify.
+- **Protected Point-of-Sale (POS):** Secured with **Spring Security** (authentication + CSRF protection + 24h session keep-alive) and camera-based QR scanning (`html5-qrcode`).
 - **Points & Purchase Tracking:** Automatically awards 1 point per $10.00 MXN spent, updates customer balances transactionally, and emails a purchase summary showing unlocked rewards and progress toward upcoming rewards.
 - **Dynamic Rewards Catalog:** In-POS reward manager to create and soft-delete (`activa = false`) rewards, with server-side validation of reward cost during redemption.
 - **Birthday Tracker & Automated Campaigns:** Displays the current month's birthday customers in the POS header, highlights birthday customers on lookup, and runs a monthly `@Scheduled` cron job (plus manual trigger) to email birthday customers a free-dessert voucher.
@@ -16,23 +17,35 @@ This repository is a portfolio project. It contains application source code and 
 
 - **Java 21 LTS** and **Spring Boot 4.1.1**
 - **Spring MVC**, **Thymeleaf**, **Jakarta Bean Validation**, **Spring Data JPA**
-- **Spring Security** (Form Login & CSRF protection)
+- **Spring Security** (Form Login, CSRF protection & CORS configuration for PWA)
 - **Spring Scheduling** (`@EnableScheduling` / `@Scheduled` cron jobs)
-- **PostgreSQL 18**
-- **ZXing** (QR code generation) & **Spring Mail** (HTML multipart emails)
-- **Docker** and **Docker Compose**
+- **PostgreSQL** (Cloud deployment on **Neon.tech** / local PostgreSQL 18)
+- **ZXing** (QR code generation) & **Spring Mail** (`MailConfig` + HTML multipart emails)
+- **Docker** (Cloud deployment on **Render.com** & local Docker Compose)
 
 ## Architecture
 
 The application follows a layered backend architecture:
 
-- `config/` configures Spring Security authentication and endpoint authorization rules.
+- `config/` configures Spring Security authentication, CORS rules (`SecurityConfig`), and explicit mail bean configuration (`MailConfig`).
 - `controller/` handles web views (`ViewController`) and REST API endpoints (`ClienteController`, `TransaccionController`, `RecompensaController`).
-- `dto/` defines request/response contracts and Jakarta validation rules.
-- `service/` implements business rules, transactional point operations, QR generation, HTML email templates, and scheduled birthday notifications (`CumpleanosScheduler`).
+- `dto/` defines request/response contracts (`ClienteRegistroDTO`, `ClienteLoginDTO`, `ClienteResponseDTO`, `TransaccionRegistroDTO`, `CanjeRegistroDTO`, etc.) and Jakarta validation rules.
+- `service/` implements business rules, server-side customer authentication, transactional point operations, QR generation, HTML email templates, and scheduled birthday notifications (`CumpleanosScheduler`).
 - `repository/` accesses persisted data through Spring Data JPA derived queries and custom JPQL (`@Query`).
 - `model/` contains the JPA entities (`Cliente`, `Transaccion`, `Recompensa`).
 - `templates/` contains the registration (`registro.html`) and point-of-sale (`pos.html`) views.
+
+## Environment Variables (Cloud / Render Deployment)
+
+Configure the following environment variables in your cloud provider (never commit real secrets to Git):
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `SPRING_MAIL_USERNAME`
+- `SPRING_MAIL_PASSWORD`
+- `SPRING_SECURITY_USER_NAME`
+- `SPRING_SECURITY_USER_PASSWORD`
 
 ## Run locally with Docker
 
@@ -55,12 +68,6 @@ Open:
 - Registration page: <http://localhost:8081/registro>
 - Point-of-sale page: <http://localhost:8081/pos>
 
-Stop the containers while keeping the database volume:
-
-```powershell
-docker compose down
-```
-
 ## Run tests
 
 On Windows (using JDK 21):
@@ -71,4 +78,4 @@ On Windows (using JDK 21):
 
 ## Portafolio (Español)
 
-**Sugar Loyalty** es una aplicación web de fidelización y punto de venta (POS) para la repostería **Sugar Pop**. Incluye registro público de clientes con tarjeta QR digital, panel de caja protegido con Spring Security, catálogo administrable de recompensas, notificaciones dinámicas por correo electrónico tras cada compra y envío automatizado de regalos de cumpleaños cada inicio de mes.
+**Sugar Loyalty** es una plataforma full-stack de fidelización y punto de venta (POS) para la repostería **Sugar Pop**, desplegada en la nube con **Render** (Backend Docker), **Neon** (PostgreSQL Serverless) y **Netlify** (PWA de clientes en React). Incluye registro e inicio de sesión seguro de clientes con tarjeta QR digital, panel de caja protegido con Spring Security, catálogo administrable de recompensas, notificaciones dinámicas por correo electrónico tras cada compra y envío automatizado de regalos de cumpleaños cada inicio de mes.
