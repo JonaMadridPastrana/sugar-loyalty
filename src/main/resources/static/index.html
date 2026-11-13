@@ -7,21 +7,21 @@
 
     <!-- Configuración PWA General -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#9333EA" />
+    <meta name="theme-color" content="#A48FFF" />
     <meta name="description" content="¡Suma puntos y canjea tus postres favoritos en Sugar Pop Repostería Creativa!" />
-    <link rel="icon" type="image/svg+xml" href="/sugar-icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
 
     <!-- Compatibilidad PWA para iOS (iPhone / iPad) -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Sugar Pop" />
-    <link rel="apple-touch-icon" href="/LogoBlanco.PNG" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <script>
       // Limpia cachés antiguas de Service Worker en iOS Safari si hubo una actualización
       if ('caches' in window) {
         caches.keys().then(function (names) {
           names.forEach(function (name) {
-            if (name !== 'sugar-pop-pwa-v4') {
+            if (name !== 'sugar-pop-pwa-v5') {
               caches.delete(name);
             }
           });

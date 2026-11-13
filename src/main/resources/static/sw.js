@@ -1,6 +1,9 @@
-const CACHE_NAME = 'sugar-pop-pwa-v4';
+const CACHE_NAME = 'sugar-pop-pwa-v5';
 const STATIC_ASSETS = [
   '/manifest.json',
+  '/apple-touch-icon.png',
+  '/icon-192.png',
+  '/icon-512.png',
   '/sugar-icon.svg',
   '/LogoBlanco.PNG',
   '/FondoRegistro.jpg',
